@@ -1,0 +1,39 @@
+{
+	"main": {
+		"prefix": "tmain",
+		"body": [
+			"#include <iostream>",
+			"",
+			"int main() {",
+			"\t${1:// Your code here}",
+			"\treturn 0;",
+			"}"
+		]
+	},
+	"Exc": {
+		"prefix": "Exc",
+		"body": [
+			"// ------- ${1:num} -------",
+			"",
+			"${2:// Code}",
+			"",
+			"",
+			"//----------------------"
+		]
+	},
+	"ustd": {
+		"prefix": "ustd",
+		"body": [
+			"using namespace std;"
+		]
+	},
+	"if": {
+		"prefix": "if",
+		"body": [
+			"if(${1://exp})",
+			"{",
+			"${2://body}",
+			"}"
+		]
+	}
+}
