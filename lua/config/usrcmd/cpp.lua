@@ -15,7 +15,7 @@ vim.api.nvim_create_autocmd("FileType", {
 					return { "split", "float" , "tab" }
 				end
 
-				return { "add", "edit", "run", "open", "edit_all", "remove", "tasks", "analysis" }
+				return {"BearAll" ,"add", "edit", "run", "open", "edit_all", "remove", "tasks", "analysis" }
 			end,
 		})
 	end,

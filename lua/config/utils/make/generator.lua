@@ -1,9 +1,14 @@
+---@module "config.utils.make.generator"
+
 local Utils = require("config.utils.make.utils")
 local Parser = require("config.utils.make.parser")
 local Finder = require("config.utils.make.finder")
 
 local Generator = {}
 
+---Generate lines for required Makefile variables.
+---@param MakefileVars MakefileVars
+---@return string[]
 function Generator.GenerateMakefileVariables(MakefileVars)
 	local Lines = {}
 
@@ -17,13 +22,18 @@ function Generator.GenerateMakefileVariables(MakefileVars)
 	return Lines
 end
 
+---Generate an object target rule for a single source file.
+---@param Basename string           Basename without extension
+---@param RelativePath string       Relative path to the source file
+---@param MakefileVars MakefileVars Makefile variables table
+---@return string[]
 function Generator.ObjectTarget(Basename, RelativePath, MakefileVars)
 	local ObjName = "$(BUILD_DIR)/" .. Basename .. ".o"
 	local CompilerVar = MakefileVars.CC and "$(CC)" or "$(CXX)"
 	local FlagsVar = MakefileVars.CFLAGS and "$(CFLAGS)" or "$(CXXFLAGS)"
 
 	return {
-    "",
+		"",
 		"# marker_start: " .. RelativePath .. " type:obj",
 		ObjName .. ": " .. RelativePath,
 		"\t" .. CompilerVar .. " " .. FlagsVar .. " -c $< -o $@",
@@ -31,6 +41,14 @@ function Generator.ObjectTarget(Basename, RelativePath, MakefileVars)
 	}
 end
 
+---Generate full compilation & linking rule for an executable target.
+---@param Basename string                 Basename of the source file
+---@param RelativePath string             Relative path to the source file
+---@param Dependencies string[]|nil       Optional list of header dependencies
+---@param MakefileVars MakefileVars       Makefile variables table
+---@param RootPath string                 Root search path for includes
+---@return string[] lines_or_missing
+---@return boolean success                Whether generation succeeded
 function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, MakefileVars, RootPath)
 	Dependencies = Dependencies or {}
 	local ObjName = "$(BUILD_DIR)/" .. Basename .. ".o"
@@ -53,28 +71,35 @@ function Generator.ExecutableTarget(Basename, RelativePath, Dependencies, Makefi
 	end
 
 	if #UnFoundIncludePath > 0 then
-		return nil, UnFoundIncludePath
+		-- return `nil` second value (list of missing includes)
+		return UnFoundIncludePath,false
 	end
 
 	local IncludeStr = table.concat(Include, " ")
 	local LinkDepsStr = table.concat(LinkDeps, " ")
 
-	return true,
-		{
-			"",
-			"# marker_start: " .. RelativePath .. " type:full",
-			ObjName .. ": " .. RelativePath,
-			"\t" .. CompilerVar .. " " .. FlagsVar .. " " .. IncludeStr .. " -c $< -o $@",
-			"",
-			ExeName .. ": " .. ObjName .. (LinkDepsStr ~= "" and " " .. LinkDepsStr or ""),
-			"\t" .. CompilerVar .. " $^ -o $@",
-			"",
-			"run" .. Basename .. ": " .. ExeName,
-			"\t" .. ExeName,
-			"# marker_end: " .. RelativePath,
-		}
+	return {
+		"",
+		"# marker_start: " .. RelativePath .. " type:full",
+		ObjName .. ": " .. RelativePath,
+		"\t" .. CompilerVar .. " " .. FlagsVar .. " " .. IncludeStr .. " -c $< -o $@",
+		"",
+		ExeName .. ": " .. ObjName .. (LinkDepsStr ~= "" and " " .. LinkDepsStr or ""),
+		"\t" .. CompilerVar .. " $^ -o $@",
+		"",
+		"run" .. Basename .. ": " .. ExeName,
+		"\t" .. ExeName,
+		"# marker_end: " .. RelativePath,
+	},
+		true
 end
 
+---Ensure the required Makefile variables are present in the file content.
+---@param MakefilePath string
+---@param Content string|nil
+---@param MakefileVars MakefileVars
+---@return boolean success
+---@return string|nil new_content_or_error
 function Generator.EnsureMakefileVariables(MakefilePath, Content, MakefileVars)
 	if not Parser.HasReqVars(Content, MakefileVars) then
 		local VarLines = Generator.GenerateMakefileVariables(MakefileVars)

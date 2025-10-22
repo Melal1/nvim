@@ -1,3 +1,5 @@
+---@class MakeModule
+---@field Config table
 local M = {}
 
 local Config = require("config.utils.make.config")
@@ -8,10 +10,14 @@ local RootFinder = require("config.utils.make.finder")
 
 M.Config = Config.DefaultConfig
 
+---@param UserConfig table|nil
 function M.Setup(UserConfig)
 	M.Config = vim.tbl_deep_extend("force", M.Config, UserConfig or {})
 end
 
+---@param Content string
+---@param RelativePath string
+---@return boolean
 local function TargetExists(Content, RelativePath)
 	if Parser.TargetExists(Content, RelativePath) then
 		return true
@@ -19,8 +25,11 @@ local function TargetExists(Content, RelativePath)
 	return false
 end
 
+---@param Content string
+---@return table[]
 local function GetObjectTargetsForPicker(Content)
 	local sections = Parser.GetSectionsByType(Content, "obj")
+	---@type table[]
 	local names = {}
 
 	for _, entry in ipairs(sections) do
@@ -34,6 +43,8 @@ local function GetObjectTargetsForPicker(Content)
 	return names
 end
 
+---@param Content string
+---@return table[]
 local function GetExeTables(Content)
 	local result = {}
 
@@ -46,8 +57,11 @@ local function GetExeTables(Content)
 	return result
 end
 
+---@param Content string
+---@return table[]
 local function GetAllTargetsForDisplay(Content)
 	local allSections = Parser.AnalyzeAllSections(Content)
+	---@type table[]
 	local targets = {}
 
 	for _, section in ipairs(allSections) do
@@ -72,22 +86,29 @@ local function GetAllTargetsForDisplay(Content)
 	return targets
 end
 
+---@param MakefilePath string
+---@param FilePath string
+---@param RootPath string
+---@param Content string
+---@return boolean
 function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 	if not Utils.IsValidSourceFile(FilePath, M.Config.SourceExtensions) then
 		vim.notify("File is not a valid source file: " .. vim.fn.fnamemodify(FilePath, ":e"), vim.log.levels.WARN)
 		return false
 	end
 
-	local Success, UpdatedContent = Generator.EnsureMakefileVariables(MakefilePath, Content, M.Config.MakefileVars)
+	local Success = Parser.HasReqVars(Content, M.Config.MakefileVars)
 	if not Success then
-		vim.notify(UpdatedContent or "Failed to ensure Makefile variables", vim.log.levels.ERROR)
+		vim.notify("Failed to ensure Makefile variables", vim.log.levels.ERROR)
 		return false
 	end
-	Content = UpdatedContent
 
-	local RelativePath, Err = Utils.GetRelativePath(FilePath, RootPath)
-	if not RelativePath then
-		vim.notify(Err or "Failed to get relative path", vim.log.levels.WARN)
+	local Vars = Parser.ParseVariables(Content)
+	local BuildDir = Vars["BUILD_DIR"]
+
+	local RelativePath, okay = Utils.GetRelativePath(FilePath, RootPath)
+	if not okay then
+		vim.notify(RelativePath)
 		return false
 	end
 
@@ -114,6 +135,8 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 		end
 
 		vim.notify("\nAdded object target: " .. ObjName, vim.log.levels.INFO)
+		local Bear = require("config.utils.make.modules.bear")
+		Bear.Target(Lines, RootPath, BuildDir)
 		return true
 	else
 		if TargetExists(Content, RelativePath) then
@@ -130,11 +153,12 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 				return false
 			end
 			picker.pick_checklist(ObjectFiles, function(Selected)
-				local status, Lines =
+				local Lines, status =
 					Generator.ExecutableTarget(Basename, RelativePath, Selected, M.Config.MakefileVars, RootPath)
 				if not status then
 					vim.notify(
-						"\nFailed to generate executable target. Missing include paths for: " .. table.concat(Lines, ", "),
+						"\nFailed to generate executable target. Missing include paths for: "
+							.. table.concat(Lines, ", "),
 						vim.log.levels.ERROR
 					)
 					return
@@ -148,25 +172,33 @@ function M.AddToMakefile(MakefilePath, FilePath, RootPath, Content)
 					"\nAdded executable target: " .. Basename .. " with " .. #Selected .. " dependencies",
 					vim.log.levels.INFO
 				)
+				local Bear = require("config.utils.make.modules.bear")
+				Bear.Target(Lines, RootPath, BuildDir)
 			end, { prompt_title = "Select object file dependencies" })
 		else
-			local _, Lines = Generator.ExecutableTarget(Basename, RelativePath, {}, M.Config.MakefileVars, RootPath)
+			local Lines = Generator.ExecutableTarget(Basename, RelativePath, {}, M.Config.MakefileVars, RootPath)
 			local AppendSuccess, WriteErr = Utils.AppendToFile(MakefilePath, Lines)
 			if not AppendSuccess then
 				vim.notify("\nFailed to write to Makefile: " .. WriteErr, vim.log.levels.ERROR)
 				return false
 			end
 			vim.notify("\nAdded standalone executable target: " .. Basename, vim.log.levels.INFO)
+			local Bear = require("config.utils.make.modules.bear")
+			Bear.Target(Lines, RootPath, BuildDir)
 		end
 		return true
 	end
 end
 
+---@param MakefilePath string
+---@param RelativePath string
+---@param Content string
+---@return boolean
 function M.RunTargetInSpilt(MakefilePath, RelativePath, Content)
 	local ok, term = pcall(require, "config.utils.toggleTerm")
 	if not ok then
 		vim.notify("toggleTerm module not found", vim.log.levels.WARN)
-		return
+		return false
 	end
 
 	local Targets = GetExeTables(Content)
@@ -175,7 +207,7 @@ function M.RunTargetInSpilt(MakefilePath, RelativePath, Content)
 		return false
 	end
 
-	local RunTargetName
+	local RunTargetName = nil
 	for _, Entry in ipairs(Targets) do
 		if Entry.path == RelativePath then
 			RunTargetName = "run" .. Entry.baseName
@@ -189,12 +221,14 @@ function M.RunTargetInSpilt(MakefilePath, RelativePath, Content)
 	end
 
 	local MakefileDir = vim.fn.fnamemodify(MakefilePath, ":h")
-	local Cmd = { "cd " .. vim.fn.shellescape(MakefileDir) .. " && clear", " make " .. RunTargetName }
+	local cmd = "cd " .. vim.fn.shellescape(MakefileDir) .. " && make " .. RunTargetName
+	term.SingleShot(cmd)
 
-	term.run_cmd(Cmd)
 	return true
 end
 
+---@param makefile_content string
+---@return boolean
 function M.PickAndRunTargets(makefile_content)
 	local targets = GetAllTargetsForDisplay(makefile_content)
 	local display_labels = {}
@@ -237,19 +271,26 @@ function M.PickAndRunTargets(makefile_content)
 	end, {
 		prompt_title = "Select Makefile target(s) ",
 	})
+	return true
 end
 
+---@param MakefilePath string
+---@param FilePath string
+---@param RootPath string
+---@param Content string
+---@param Entries table[]|nil
+---@param callback fun(success:boolean)|nil
+---@return boolean
 function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callback)
 	local Basename = vim.fn.fnamemodify(FilePath, ":t:r")
-	ReturnNewContent = ReturnNewContent == true
 
-	local RelativePath, Err = Utils.GetRelativePath(FilePath, RootPath)
-	if not RelativePath then
-		vim.notify(Err or "Failed to get relative path", vim.log.levels.ERROR)
+	local RelativePath, okay = Utils.GetRelativePath(FilePath, RootPath)
+	if not okay then
+		vim.notify(RelativePath)
 		if callback then
 			callback(false)
 		end
-		return
+		return false
 	end
 
 	if not Entries or #Entries == 0 then
@@ -259,7 +300,7 @@ function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callba
 			if callback then
 				callback(false)
 			end
-			return
+			return false
 		end
 	end
 
@@ -280,7 +321,7 @@ function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callba
 		if callback then
 			callback(false)
 		end
-		return
+		return false
 	end
 
 	local picker = require("config.utils.pick")
@@ -289,7 +330,7 @@ function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callba
 		if callback then
 			callback(false)
 		end
-		return
+		return false
 	end
 
 	picker.pick_checklist(ObjectFiles, function(selected)
@@ -322,7 +363,7 @@ function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callba
 
 		Content = table.concat(NewLines, "\n")
 
-		local status, GenLines =
+		local GenLines, status =
 			Generator.ExecutableTarget(Basename, RelativePath, selected, M.Config.MakefileVars, RootPath)
 		if not status then
 			vim.notify(
@@ -347,19 +388,24 @@ function M.EditTarget(MakefilePath, FilePath, RootPath, Content, Entries, callba
 
 		vim.notify("Edited target: " .. Basename .. " with " .. #selected .. " dependencies", vim.log.levels.INFO)
 	end, { prompt_title = "Select new dependencies for " .. Basename, preselected_items = ExsistingDeps })
+	return true
 end
 
+---@param MakefilePath string
+---@param RootPath string
+---@param Content string
+---@return boolean
 function M.EditAllTargets(MakefilePath, RootPath, Content)
 	local Entries = GetExeTables(Content)
 	if not Entries or #Entries == 0 then
 		vim.notify("No executable targets found in Makefile", vim.log.levels.WARN)
-		return
+		return false
 	end
 
 	local picker = require("config.utils.pick")
 	if not picker.available then
 		vim.notify("Telescope is required for editing targets", vim.log.levels.ERROR)
-		return
+		return false
 	end
 
 	local pick_entries = {}
@@ -377,8 +423,12 @@ function M.EditAllTargets(MakefilePath, RootPath, Content)
 
 		M.EditTarget(MakefilePath, entry_map[selected].path, RootPath, Content, entry_map[selected])
 	end, { prompt_title = " Selcet target to edit" })
+	return true
 end
 
+---@param MakefilePath string
+---@param Content string
+---@return boolean
 function M.Remove(MakefilePath, Content)
 	local Entries = Parser.AnalyzeAllSections(Content)
 
@@ -388,7 +438,7 @@ function M.Remove(MakefilePath, Content)
 	local picker = require("config.utils.pick")
 	if not picker.available then
 		vim.notify("Telescope is required for editing targets", vim.log.levels.ERROR)
-		return
+		return false
 	end
 
 	for _, Entry in ipairs(Entries) do
@@ -457,15 +507,18 @@ function M.Remove(MakefilePath, Content)
 			return
 		end
 	end, { ptrompt_title = "Select target(s) to remove", previewer = picker.text_per_entry_previewer("make") })
+	return true
 end
 
+---@param Fargs string[]
+---@return boolean
 function M.Make(Fargs)
-  if #Fargs > 2 then
-    vim.notify("Too many arguments. Use: add, edit, run, ...", vim.log.levels.WARN)
-    return false
-  end
+	if #Fargs > 2 then
+		vim.notify("Too many arguments. Use: add, edit, run, ...", vim.log.levels.WARN)
+		return false
+	end
 	Arg = Fargs[1] or "run"
-  Arg = Arg:lower()
+	Arg = Arg:lower()
 
 	local Root, Err = RootFinder.FindRoot(nil, M.Config.MaxSearchLevels, M.Config.RootMarkers)
 
@@ -489,14 +542,8 @@ function M.Make(Fargs)
 
 	local MakefileContent, _ = Utils.ReadFile(MakefilePath)
 	if not MakefileContent then
-		local VarLines = Generator.GenerateMakefileVariables(M.Config.MakefileVars)
-		MakefileContent = table.concat(VarLines, "\n")
-		local Success, WriteErr = Utils.WriteFile(MakefilePath, MakefileContent)
-		if not Success then
-			vim.notify("Could not create Makefile: " .. WriteErr, vim.log.levels.ERROR)
-			return false
-		end
-		vim.notify("Created new Makefile with default variables", vim.log.levels.INFO)
+		vim.notify("Couldn't find Makefile", vim.log.levels.INFO)
+		return false
 	end
 
 	local CurrentFile = vim.fn.expand("%:p")
@@ -506,35 +553,47 @@ function M.Make(Fargs)
 	end
 	if #Fargs == 2 and Arg == "run" then
 		Fargs[2] = Fargs[2]:lower()
+		local RelativePath, okay = Utils.GetRelativePath(CurrentFile, Root.Path)
+		if not okay then
+			vim.notify(RelativePath, vim.log.levels.ERROR)
+			return false
+		end
 		if Fargs[2] == "split" then
-			M.RunTargetInSpilt(MakefilePath, CurrentFile, MakefileContent)
-			return
+			M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+			return true
 		elseif Fargs[2] == "float" then
-			M.RunTargetInSpilt(MakefilePath, CurrentFile, MakefileContent)
-			return
+			M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+			return true
 		elseif Fargs[2] == "tab" then
-			M.RunTargetInSpilt(MakefilePath, CurrentFile, MakefileContent)
-			return
+			M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+			return true
 		end
 	end
 
 	if Arg == "add" then
-		M.AddToMakefile(MakefilePath, CurrentFile, Root.Path, MakefileContent)
+		return M.AddToMakefile(MakefilePath, CurrentFile, Root.Path, MakefileContent)
+  elseif Arg == "bearall" then
+    return require("config.utils.make.modules.bear").SelectTarget(MakefileContent,Root.Path)
 	elseif Arg == "run" then
 		local RelativePath, _ = Utils.GetRelativePath(CurrentFile, Root.Path)
-		M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
+		return M.RunTargetInSpilt(MakefilePath, RelativePath, MakefileContent)
 	elseif Arg == "edit" then
-		M.EditTarget(MakefilePath, CurrentFile, Root.Path, MakefileContent)
+		return M.EditTarget(MakefilePath, CurrentFile, Root.Path, MakefileContent)
 	elseif Arg == "tasks" then
-		M.PickAndRunTargets(MakefileContent)
+		return M.PickAndRunTargets(MakefileContent)
 	elseif Arg == "edit_all" then
-		M.EditAllTargets(MakefilePath, Root.Path, MakefileContent)
+		return M.EditAllTargets(MakefilePath, Root.Path, MakefileContent)
 	elseif Arg == "remove" then
-		M.Remove(MakefilePath, MakefileContent)
+		return M.Remove(MakefilePath, MakefileContent)
 	elseif Arg == "analysis" then
 		Parser.PrintAnalysisSummary(MakefileContent)
+		return true
+	elseif Arg == "bear" then
+		local Bear = require("config.utils.make.modules.bear")
+		return Bear.CurrentFile(MakefileContent, Root.Path)
 	else
 		vim.notify("Unknown command", vim.log.levels.WARN)
+		return false
 	end
 end
 

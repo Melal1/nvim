@@ -1,4 +1,84 @@
 return {
+	--Markdown
+	{
+		"MeanderingProgrammer/render-markdown.nvim",
+		dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" }, -- if you prefer nvim-web-devicons
+		ft = { "markdown", "Avante" },
+		---@module 'render-markdown'
+		---@type render.md.UserConfig
+		opts = {},
+	},
+	--Movement training
+	{
+		"ThePrimeagen/vim-be-good",
+		cmd = { "VimBeGood" },
+	},
+	--WritingEx: typr
+	{
+		"nvzone/typr",
+		dependencies = "nvzone/volt",
+		opts = {},
+		cmd = { "Typr", "TyprStats" },
+	},
+	--Tips
+	{
+		"saxon1964/neovim-tips",
+		version = "*", -- Only update on tagged releases
+		cmd = "NeovimTips",
+		dependencies = {
+			"MunifTanjim/nui.nvim",
+			"MeanderingProgrammer/render-markdown.nvim",
+		},
+		opts = {
+			-- OPTIONAL: Location of user defined tips (default value shown below)
+			user_file = vim.fn.stdpath("config") .. "/neovim_tips/user_tips.md",
+			-- OPTIONAL: Prefix for user tips to avoid conflicts (default: "[User] ")
+			user_tip_prefix = "[User] ",
+			-- OPTIONAL: Show warnings when user tips conflict with builtin (default: true)
+			warn_on_conflicts = true,
+			-- OPTIONAL: Daily tip mode (default: 1)
+			-- 0 = off, 1 = once per day, 2 = every startup
+			daily_tip = 1,
+		},
+		init = function()
+			-- OPTIONAL: Change to your liking or drop completely
+			-- The plugin does not provide default key mappings, only commands
+			local map = vim.keymap.set
+			map("n", "<leader>nto", ":NeovimTips<CR>", { desc = "Neovim tips", noremap = true, silent = true })
+			map(
+				"n",
+				"<leader>nte",
+				":NeovimTipsEdit<CR>",
+				{ desc = "Edit your Neovim tips", noremap = true, silent = true }
+			)
+			map(
+				"n",
+				"<leader>nta",
+				":NeovimTipsAdd<CR>",
+				{ desc = "Add your Neovim tip", noremap = true, silent = true }
+			)
+			map(
+				"n",
+				"<leader>ntr",
+				":NeovimTipsRandom<CR>",
+				{ desc = "Show random tip", noremap = true, silent = true }
+			)
+		end,
+	},
+	--Tumx Nav
+	{
+		"alexghergh/nvim-tmux-navigation",
+		keys = {
+			{ "<c-h>", "<cmd>NvimTmuxNavigateLeft<cr>" },
+			{ "<c-j>", "<cmd>NvimTmuxNavigateDown<cr>" },
+			{ "<c-k>", "<cmd>NvimTmuxNavigateUp<cr>" },
+			{ "<c-l>", "<cmd>NvimTmuxNavigateRight<cr>" },
+		},
+		config = function()
+			require("nvim-tmux-navigation").setup({})
+		end,
+	},
+	--Gx
 	{
 		"chrishrb/gx.nvim",
 		keys = { { "gx", "<cmd>Browse<cr>", mode = { "n", "x" } } },
@@ -62,5 +142,41 @@ return {
 		--     end,
 		--   },
 		-- } end,
+	},
+	--Profiling:Startuptime
+	{
+		"dstein64/vim-startuptime",
+		lazy = true,
+		cmd = { "StartupTime" },
+	},
+	--MovementTrain: Hardtime
+	{
+		"m4xshen/hardtime.nvim",
+		event = { "BufReadPost", "BufNewFile" },
+		keys = { { "<leader>lht", "<cmd>Hardtime toggle" } },
+		dependencies = { "MunifTanjim/nui.nvim" },
+		opts = {},
+	},
+	--UndoHighlight
+	{
+		"tzachar/highlight-undo.nvim",
+		event = { "BufReadPost" },
+		opts = {
+			hlgroup = "IncSearch",
+			duration = 300,
+			pattern = { "*" },
+			ignored_filetypes = { "neo-tree", "fugitive", "TelescopePrompt", "mason", "lazy" },
+		},
+	},
+	--Disocrd
+	{
+		"vyfor/cord.nvim",
+		build = ":Cord update",
+		opts = {
+			display = {
+				theme = "atom",
+				flavor = "dark",
+			},
+		},
 	},
 }

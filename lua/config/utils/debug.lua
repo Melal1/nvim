@@ -41,7 +41,8 @@ function RunDebug(Filetype, ExecutablePath)
 				local Cmd = string.format('gdbserver --no-startup-with-shell :1234 "%s"', ExecutablePath)
 				vim.fn.system("tmux split-window -h -l 30 " .. Cmd)
 			else
-				vim.notify("To have a console make sure you are on tmux")
+				vim.notify("To have a console make sure you are on tmux",vim.log.levels.ERROR)
+        return
 			end
 		end,
 	}
@@ -50,6 +51,7 @@ function RunDebug(Filetype, ExecutablePath)
 		Db[Filetype]()
 	else
 		vim.notify("No debug configuration for filetype: " .. Filetype, vim.log.levels.WARN)
+    return
 	end
 end
 

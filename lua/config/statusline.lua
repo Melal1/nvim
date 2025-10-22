@@ -1,5 +1,7 @@
 local M = {}
 
+vim.cmd(":hi statusline guibg=NONE")
+vim.cmd(":hi StatuslineTerm guibg=NONE")
 local colors = {
 	bg = "#141415",
 	bg_alt = "#252530",
@@ -203,7 +205,7 @@ vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach", "BufEnter" }, {
 local dap = false
 
 local function filepath()
-	if is_truncated100 or dap then
+	if is_truncated100 or dap or vim.bo.buftype == "terminal" then
 		return ""
 	end
 	local fpath = vim.fn.expand("%:~:.:h")
@@ -215,6 +217,12 @@ local function filepath()
 end
 
 local function file_component()
+	-- Handle terminal buffers
+	if vim.bo.buftype == "terminal" then
+		local shell_name = vim.env.SHELL and vim.fn.fnamemodify(vim.env.SHELL, ":t") or "shell"
+		return string.format("%%#StatusLineFileName# %s", shell_name)
+	end
+
 	local fname = vim.fn.expand("%:t")
 
 	if fname == "" or dap then

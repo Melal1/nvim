@@ -50,4 +50,3 @@ vim.cmd('autocmd BufEnter * setlocal formatoptions-=cro')
 -- ========================================
 -- Other
 -- ========================================
-vim.cmd(":hi statusline guibg=NONE")

@@ -1,6 +1,10 @@
+---@module "config.utils.make.parser"
 local Utils = require("config.utils.make.utils")
+---@class Parser
 local Parser = {}
 
+---@param Content string|nil
+---@return table<string, string>
 function Parser.ParseVariables(Content)
 	local Variables = {}
 	if not Content then
@@ -19,6 +23,9 @@ function Parser.ParseVariables(Content)
 	return Variables
 end
 
+---@param Content string|nil
+---@param MakefileVars MakefileVars
+---@return boolean
 function Parser.HasReqVars(Content, MakefileVars)
 	if not Content then
 		return false
@@ -32,6 +39,16 @@ function Parser.HasReqVars(Content, MakefileVars)
 	return true
 end
 
+---@class MarkerInfo
+---@field M_start integer|nil
+---@field M_end integer|nil
+---@field type string|nil
+
+---@param Content string
+---@param RelativePath string
+---@param CheckStart boolean
+---@param CheckEnd boolean
+---@return MarkerInfo
 function Parser.FindMarker(Content, RelativePath, CheckStart, CheckEnd)
 	local info = { M_start = nil, M_end = nil, type = nil }
 	local escapedPath = Utils.EscapePattern(RelativePath)
@@ -77,6 +94,14 @@ function Parser.FindMarker(Content, RelativePath, CheckStart, CheckEnd)
 	return info
 end
 
+---@class MarkerPair
+---@field path string
+---@field StartLine integer
+---@field EndLine integer
+---@field annotatedType string|nil
+
+---@param Content string|nil
+---@return MarkerPair[]
 function Parser.FindAllMarkerPairs(Content)
 	local allPairs = {}
 	local openMarkers = {}
@@ -113,6 +138,11 @@ function Parser.FindAllMarkerPairs(Content)
 	return allPairs
 end
 
+---@param Content string
+---@param StartLine integer
+---@param EndLine integer
+---@param ReturnTable boolean?
+---@return string|string[]
 function Parser.ReadContentBetweenLines(Content, StartLine, EndLine, ReturnTable)
 	ReturnTable = not not ReturnTable
 	local contentLines = {}
@@ -129,6 +159,10 @@ function Parser.ReadContentBetweenLines(Content, StartLine, EndLine, ReturnTable
 	return table.concat(contentLines, "\n")
 end
 
+---@param Content string
+---@param RelativePath string
+---@param ReturnTable boolean?
+---@return string|string[]
 function Parser.ReadContentBetweenMarkers(Content, RelativePath, ReturnTable)
 	ReturnTable = not not ReturnTable
 	local contentLines = {}
@@ -151,6 +185,9 @@ function Parser.ReadContentBetweenMarkers(Content, RelativePath, ReturnTable)
 	return table.concat(contentLines, "\n")
 end
 
+---@param Content string|nil
+---@param RelativePath string
+---@return boolean
 function Parser.TargetExists(Content, RelativePath)
 	if not Content then
 		return false
@@ -159,6 +196,8 @@ function Parser.TargetExists(Content, RelativePath)
 	return markerInfo.M_start ~= nil
 end
 
+---@param targetLine string
+---@return string[]
 function Parser.ParseDependencies(targetLine)
 	local dependencies = {}
 
@@ -174,6 +213,15 @@ function Parser.ParseDependencies(targetLine)
 	return dependencies
 end
 
+---@class TargetInfo
+---@field name string
+---@field dependencies string[]
+---@field recipe string[]
+---@field found boolean
+
+---@param sectionContent string
+---@param targetName string
+---@return TargetInfo
 function Parser.ParseTarget(sectionContent, targetName)
 	local target = {
 		name = targetName,
@@ -215,12 +263,17 @@ function Parser.ParseTarget(sectionContent, targetName)
 	return target
 end
 
+---@param sectionContent string
+---@param baseName string|nil
+---@param annotatedType string|nil
+---@return boolean hasObj
+---@return boolean hasExecutable
+---@return boolean hasRun
 function Parser.DetectTargetTypes(sectionContent, baseName, annotatedType)
 	local hasObj = false
 	local hasExecutable = false
 	local hasRun = false
 
-	-- Determine what to search for based on annotated type
 	local searchFor = {
 		obj = true,
 		executable = true,
@@ -228,7 +281,6 @@ function Parser.DetectTargetTypes(sectionContent, baseName, annotatedType)
 	}
 
 	if annotatedType then
-		-- Only search for targets relevant to the annotated type
 		searchFor = {
 			obj = false,
 			executable = false,
@@ -260,14 +312,12 @@ function Parser.DetectTargetTypes(sectionContent, baseName, annotatedType)
 		if targetName then
 			targetName = targetName:match("^%s*(.-)%s*$")
 
-			-- Check for object file (ends with .o or contains .o in path)
 			if searchFor.obj and not hasObj then
 				if targetName:match("%.o$") or targetName:match("%.o%s*$") then
 					hasObj = true
 				end
 			end
 
-			-- Check for executable (matches baseName exactly or ends with baseName)
 			if searchFor.executable and not hasExecutable then
 				if
 					baseName
@@ -277,7 +327,6 @@ function Parser.DetectTargetTypes(sectionContent, baseName, annotatedType)
 				end
 			end
 
-			-- Check for run target
 			if searchFor.run and not hasRun then
 				if
 					baseName
@@ -290,7 +339,6 @@ function Parser.DetectTargetTypes(sectionContent, baseName, annotatedType)
 				end
 			end
 
-			-- Early exit if we found everything we're looking for
 			if
 				(not searchFor.obj or hasObj)
 				and (not searchFor.executable or hasExecutable)
@@ -306,6 +354,20 @@ function Parser.DetectTargetTypes(sectionContent, baseName, annotatedType)
 	return hasObj, hasExecutable, hasRun
 end
 
+---@class SectionAnalysis
+---@field hasObj boolean
+---@field hasExecutable boolean
+---@field hasRun boolean
+---@field type string
+---@field targets TargetInfo[]
+---@field valid boolean
+---@field error string|nil
+---@field annotatedType string|nil
+
+---@param sectionContent string
+---@param baseName string|nil
+---@param annotatedType string|nil
+---@return SectionAnalysis
 function Parser.AnalyzeSection(sectionContent, baseName, annotatedType)
 	if not sectionContent or sectionContent == "" then
 		return {
@@ -326,7 +388,6 @@ function Parser.AnalyzeSection(sectionContent, baseName, annotatedType)
 		baseName = baseName:gsub("%.cpp$", "")
 	end
 
-	-- Parse all targets
 	for line in sectionContent:gmatch("[^\n]+") do
 		local trimmedLine = line:match("^%s*(.-)%s*$")
 
@@ -347,10 +408,8 @@ function Parser.AnalyzeSection(sectionContent, baseName, annotatedType)
 		::continue::
 	end
 
-	-- Detect what types of targets exist
 	local hasObj, hasExecutable, hasRun = Parser.DetectTargetTypes(sectionContent, baseName)
 
-	-- Determine inferred type
 	local inferredType
 	if hasObj and hasExecutable and hasRun then
 		inferredType = "full"
@@ -364,12 +423,10 @@ function Parser.AnalyzeSection(sectionContent, baseName, annotatedType)
 		inferredType = "unknown"
 	end
 
-	-- Validation logic
 	local valid = true
 	local error = nil
 
 	if annotatedType then
-		-- Type was specified in marker, validate it
 		local expectedTargets = {}
 
 		if annotatedType == "full" then
@@ -382,7 +439,6 @@ function Parser.AnalyzeSection(sectionContent, baseName, annotatedType)
 			expectedTargets = { "run" }
 		end
 
-		-- Check if expected targets exist
 		local missingTargets = {}
 		for _, expected in ipairs(expectedTargets) do
 			if expected == "obj" and not hasObj then
@@ -402,7 +458,6 @@ function Parser.AnalyzeSection(sectionContent, baseName, annotatedType)
 				table.concat(missingTargets, ", ")
 			)
 		end
-
 	end
 
 	return {
@@ -417,12 +472,17 @@ function Parser.AnalyzeSection(sectionContent, baseName, annotatedType)
 	}
 end
 
+---@param Content string
+---@return { path: string, baseName: string|nil, startLine: integer, endLine: integer, analysis: SectionAnalysis }[]
 function Parser.AnalyzeAllSections(Content)
 	local allPairs = Parser.FindAllMarkerPairs(Content)
 	local sectionAnalysis = {}
 
 	for _, pair in ipairs(allPairs) do
 		local sectionContent = Parser.ReadContentBetweenMarkers(Content, pair.path)
+		if type(sectionContent) == "table" then
+			sectionContent = table.concat(sectionContent, "\n")
+		end
 
 		local baseName = pair.path:match("([^/]+)%.cpp$")
 		if baseName then
@@ -431,7 +491,6 @@ function Parser.AnalyzeAllSections(Content)
 
 		local analysis = Parser.AnalyzeSection(sectionContent, baseName, pair.annotatedType)
 
-		-- Only add valid sections to the list, but track invalid ones for error reporting
 		if analysis.valid then
 			table.insert(sectionAnalysis, {
 				path = pair.path,
@@ -441,7 +500,6 @@ function Parser.AnalyzeAllSections(Content)
 				analysis = analysis,
 			})
 		else
-			-- Print error for invalid section
 			vim.notify(string.format("ERROR in section '%s': %s", pair.path, analysis.error), vim.log.levels.ERROR)
 		end
 	end
@@ -449,6 +507,9 @@ function Parser.AnalyzeAllSections(Content)
 	return sectionAnalysis
 end
 
+---@param Content string
+---@param targetType string
+---@return table[]
 function Parser.GetSectionsByType(Content, targetType)
 	local allSections = Parser.AnalyzeAllSections(Content)
 	local filteredSections = {}
@@ -462,6 +523,7 @@ function Parser.GetSectionsByType(Content, targetType)
 	return filteredSections
 end
 
+---@param Content string
 function Parser.PrintAnalysisSummary(Content)
 	local allSections = Parser.AnalyzeAllSections(Content)
 
@@ -502,24 +564,3 @@ function Parser.PrintAnalysisSummary(Content)
 end
 
 return Parser
-
---[[ function Parser.GetExecutableDetails(Content, executableName)
-	local allSections = Parser.AnalyzeAllSections(Content)
-
-	for _, section in ipairs(allSections) do
-		if section.baseName == executableName then
-			for _, target in ipairs(section.analysis.targets) do
-				if target.name == executableName and not target.name:match("%.o$") then
-					return {
-						name = target.name,
-						dependencies = target.dependencies,
-						recipe = target.recipe,
-						section = section,
-					}
-				end
-			end
-		end
-	end
-
-	return nil
-end ]]

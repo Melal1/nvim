@@ -1,3 +1,24 @@
+---@class TelescopeEntry
+---@field value any
+---@field display? string
+---@field ordinal? string|number
+---@field preview_text? string|string[]
+
+---@class TelescopePickerOpts
+---@field prompt_title? string
+---@field theme? string
+---@field initial_mode? string
+---@field entry_maker? fun(entry: TelescopeEntry): table
+---@field sorter_opts? table
+---@field previewer? table
+---@field mappings? table<string, table<string, fun(bufnr: number)>>
+---@field show_hints? boolean
+---@field allow_single_fallback? boolean
+---@field preselected_items? any[]
+---@field selection_strategy? "replace"|"toggle"
+
+---@class TelescopePickerModule
+---@field available boolean
 local M = {}
 
 local has_telescope, pickers = pcall(require, "telescope.pickers")
@@ -9,35 +30,6 @@ end
 M.available = true
 
 local previewers = require("telescope.previewers")
-
-function M.text_per_entry_previewer(lang)
-  return previewers.new_buffer_previewer({
-    define_preview = function(self, entry)
-      local lines = {}
-
-      if entry.preview_text then
-        if type(entry.preview_text) == "table" then
-          for _, line in ipairs(entry.preview_text) do
-            table.insert(lines, tostring(line))
-          end
-        elseif type(entry.preview_text) == "string" then
-          for line in entry.preview_text:gmatch("([^\n]*)\n?") do
-            table.insert(lines, line)
-          end
-        else
-          table.insert(lines, "Invalid preview_text type")
-        end
-      else
-        table.insert(lines, "No preview available")
-      end
-
-      vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
-      vim.api.nvim_set_option_value('filetype',lang or"lua",{buf = self.state.bufnr})
-    end,
-  })
-end
-
-
 local finders = require("telescope.finders")
 local conf = require("telescope.config").values
 local actions = require("telescope.actions")
@@ -50,6 +42,9 @@ local DEFAULT_OPTS = {
 	initial_mode = "normal",
 }
 
+---@param theme_name string
+---@param theme_opts table|nil
+---@return table
 local function get_theme_config(theme_name, theme_opts)
 	local theme_func = themes["get_" .. theme_name]
 	if not theme_func then
@@ -58,6 +53,8 @@ local function get_theme_config(theme_name, theme_opts)
 	return theme_func(theme_opts or {})
 end
 
+---@param entries any
+---@return TelescopeEntry[]|nil, string|nil
 local function validate_entries(entries)
 	if type(entries) ~= "table" then
 		return nil, "Entries must be a table"
@@ -81,6 +78,8 @@ local function validate_entries(entries)
 	return normalized_entries, nil
 end
 
+---@param custom_maker fun(entry: TelescopeEntry): table|nil
+---@return fun(entry: TelescopeEntry): table
 local function create_entry_maker(custom_maker)
 	if custom_maker then
 		return custom_maker
@@ -95,6 +94,39 @@ local function create_entry_maker(custom_maker)
 	end
 end
 
+---@param lang string|nil
+---@return table
+function M.text_per_entry_previewer(lang)
+	return previewers.new_buffer_previewer({
+		define_preview = function(self, entry)
+			local lines = {}
+
+			if entry.preview_text then
+				if type(entry.preview_text) == "table" then
+					for _, line in ipairs(entry.preview_text) do
+						table.insert(lines, tostring(line))
+					end
+				elseif type(entry.preview_text) == "string" then
+					for line in entry.preview_text:gmatch("([^\n]*)\n?") do
+						table.insert(lines, line)
+					end
+				else
+					table.insert(lines, "Invalid preview_text type")
+				end
+			else
+				table.insert(lines, "No preview available")
+			end
+
+			vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
+			vim.api.nvim_set_option_value("filetype", lang or "lua", { buf = self.state.bufnr })
+		end,
+	})
+end
+
+---@param entries any
+---@param callback fun(selection: any|nil)
+---@param opts TelescopePickerOpts|nil
+---@return boolean, string|nil
 function M.pick_single(entries, callback, opts)
 	local normalized_entries, err = validate_entries(entries)
 	if not normalized_entries then
@@ -139,11 +171,15 @@ function M.pick_single(entries, callback, opts)
 	}
 
 	local theme_config = get_theme_config(opts.theme, { initial_mode = opts.initial_mode })
-
 	pickers.new(theme_config, picker_opts):find()
+
 	return true, "Single-select picker opened successfully"
 end
 
+---@param entries any
+---@param callback fun(selections: any[])
+---@param opts TelescopePickerOpts|nil
+---@return boolean, string|nil
 function M.pick_multi(entries, callback, opts)
 	local normalized_entries, err = validate_entries(entries)
 	if not normalized_entries then
@@ -156,7 +192,7 @@ function M.pick_multi(entries, callback, opts)
 	opts = vim.tbl_deep_extend("force", DEFAULT_OPTS, opts or {})
 
 	local prompt_title = opts.show_hints ~= false
-			and string.format("%s (<Tab> toggle, <C-a> toggle all)", opts.prompt_title)
+		and string.format("%s (<Tab> toggle, <C-a> toggle all)", opts.prompt_title)
 		or opts.prompt_title
 
 	local function toggle_all(prompt_bufnr)
@@ -278,6 +314,9 @@ function M.pick_multi(entries, callback, opts)
 	return true, "Multi-select picker opened successfully"
 end
 
+---@param entries any
+---@param callback fun(selection: any|nil)
+---@return boolean, string|nil
 function M.pick_single_simple(entries, callback)
 	return M.pick_single(entries, callback, {
 		theme = "dropdown",
@@ -285,6 +324,9 @@ function M.pick_single_simple(entries, callback)
 	})
 end
 
+---@param entries any
+---@param callback fun(selections: any[])
+---@return boolean, string|nil
 function M.pick_multi_simple(entries, callback)
 	return M.pick_multi(entries, callback, {
 		theme = "dropdown",
@@ -294,12 +336,20 @@ function M.pick_multi_simple(entries, callback)
 	})
 end
 
+---@param entries any
+---@param callback fun(selection: any|nil)
+---@param opts TelescopePickerOpts|nil
+---@return boolean, string|nil
 function M.pick_single_with_preview(entries, callback, opts)
 	opts = opts or {}
 	opts.previewer = opts.previewer or conf.file_previewer(opts)
 	return M.pick_single(entries, callback, opts)
 end
 
+---@param entries any
+---@param callback fun(selections: any[])
+---@param opts TelescopePickerOpts|nil
+---@return boolean, string|nil
 function M.pick_multi_with_preview(entries, callback, opts)
 	opts = opts or {}
 	opts.previewer = opts.previewer or conf.file_previewer(opts)
@@ -314,23 +364,34 @@ function M.pick_multi_with_preview(entries, callback, opts)
 	return M.pick_multi(entries, callback, opts)
 end
 
-
+---@param entries any
+---@param callback fun(selections: any[])
+---@param opts TelescopePickerOpts|nil
 function M.pick_entries(entries, callback, opts)
 	return M.pick_multi(entries, callback, opts)
 end
 
+---@param options any
+---@param callback fun(selection: any|nil)
+---@param opts TelescopePickerOpts|nil
 function M.pick_option(options, callback, opts)
 	opts = opts or {}
 	opts.prompt_title = opts.prompt_title or "Select option"
 	return M.pick_single(options, callback, opts)
 end
 
+---@param menu_items any
+---@param callback fun(selection: any|nil)
+---@param opts TelescopePickerOpts|nil
 function M.pick_menu(menu_items, callback, opts)
 	opts = opts or {}
 	opts.prompt_title = opts.prompt_title or "Select action"
 	return M.pick_single(menu_items, callback, opts)
 end
 
+---@param items any
+---@param callback fun(selections: any[])
+---@param opts TelescopePickerOpts|nil
 function M.pick_checklist(items, callback, opts)
 	opts = opts or {}
 	opts.prompt_title = opts.prompt_title or "Select items"
@@ -339,3 +400,4 @@ function M.pick_checklist(items, callback, opts)
 end
 
 return M
+
