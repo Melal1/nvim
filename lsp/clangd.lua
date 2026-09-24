@@ -148,8 +148,6 @@ local function create_clang_tidy(client)
 	vim.notify("Created .clang-tidy at " .. path)
 end
 
-local navic = require("nvim-navic")
-local navbud = require("nvim-navbuddy")
 
 ---@class ClangdInitializeResult: lsp.InitializeResult
 ---@field offsetEncoding? string
@@ -192,10 +190,7 @@ return {
 		end
 	end,
 	on_attach = function(client, bufnr)
-		-- Navic attach
 
-		navic.attach(client, bufnr)
-		navbud.attach(client, bufnr)
 
 		vim.api.nvim_buf_create_user_command(bufnr, "LspClangdDisableTidy", function()
 			set_tidy(false)
