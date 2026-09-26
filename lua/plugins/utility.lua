@@ -773,7 +773,7 @@ return {
 						-- "BlinkPairsBlue",
 						"@lsp.type.parameter",
 						"@lsp.type.enum",
-						"@keyword.exepction",
+						"@keyword.exception",
 					},
 					unmatched_group = "BlinkPairsUnmatched",
 
@@ -920,7 +920,7 @@ return {
 	--- Java
 	{
 		src = "https://github.com/mfussenegger/nvim-jdtls",
-		lazy = true,
+		ft = { "java" },
 	},
 	--- Debugging
 	{
@@ -1510,7 +1510,7 @@ return {
 	{
 		src = "https://github.com/nvimtools/none-ls.nvim",
 		after = { "plenary.nvim" },
-		ft = { "py" },
+		ft = { "python" },
 		config = function()
 			local null_ls = require("null-ls")
 

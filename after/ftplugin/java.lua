@@ -1,3 +1,13 @@
+-- nvim-jdtls is loaded lazily via the `ft = { "java" }` trigger in
+-- lua/plugins/utility.lua. Trigger it here as well so this ftplugin works no
+-- matter which FileType autocmd runs first, and stay idempotent because
+-- packload replays FileType after a lazy load.
+if vim.b.java_ftplugin_ready then
+	return
+end
+vim.b.java_ftplugin_ready = true
+Packload.trigger("nvim-jdtls")
+
 local home = vim.uv.os_homedir()
 local project_name = vim.fn.fnamemodify(vim.fn.getcwd(), ":p:h:t")
 
