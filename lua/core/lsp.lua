@@ -1,5 +1,5 @@
 vim.lsp.enable({
-	"lua_ls",
+  "emmylua_ls",
 	"cmake",
 	"pyright",
 	"ruff",
