@@ -28,10 +28,8 @@ vim.opt.number = true -- show line numbers
 vim.opt.relativenumber = true -- show relative numbers
 -- vim.opt.cursorlineopt = "number"
 vim.opt.cursorline = true
-vim.opt.updatetime = 50
-vim.opt.undofile = true -- persistent undo history
 vim.opt.updatetime = 50 -- faster cursorhold events
-vim.opt.nu = true
+vim.opt.undofile = true -- persistent undo history
 vim.o.shada = "'100,<50,s10,h"
 vim.opt.backup = false
 vim.opt.writebackup = false
@@ -50,10 +48,13 @@ vim.opt.termguicolors = true -- true color support
 vim.opt.wrap = false
 vim.opt.hlsearch = false
 vim.opt.incsearch = true
-vim.opt.guicursor = ""
+-- vim.opt.guicursor = "" -- disabled: it removed cursor shape/blink entirely; restore if that was intentional
 vim.opt.cmdheight = 1
-vim.cmd("autocmd BufEnter * set formatoptions-=cro")
-vim.cmd("autocmd BufEnter * setlocal formatoptions-=cro")
+vim.api.nvim_create_autocmd("BufEnter", {
+	callback = function()
+		vim.opt_local.formatoptions:remove({ "c", "r", "o" })
+	end,
+})
 vim.api.nvim_create_autocmd({ "InsertLeave", "WinEnter" }, {
 	callback = function()
 		vim.opt_local.cursorline = true
