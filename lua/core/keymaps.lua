@@ -98,8 +98,19 @@ map("n", "N", "Nzzzv", { desc = "Previous search result and center" })
 
 map("n", "<leader>pv", "<cmd>Oil<CR>", { desc = "Open file explorer" })
 
-map("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true, desc = "Make current file executable" })
-
+map("n", "<leader>x", function()
+	local file = vim.api.nvim_buf_get_name(0)
+	if file == "" then
+		vim.notify("Buffer has no file to chmod", vim.log.levels.WARN)
+		return
+	end
+	local out = vim.fn.system({ "chmod", "+x", file })
+	if vim.v.shell_error ~= 0 then
+		vim.notify("chmod failed: " .. out, vim.log.levels.ERROR)
+		return
+	end
+	vim.notify("chmod +x " .. vim.fn.fnamemodify(file, ":t"))
+end, { desc = "Make current file executable" })
 
 -- Move selected lines up/down in visual mode
 map("x", "<C-j>", ":m '>+1<CR>gv=gv", { desc = "Move selected lines down", silent = true })
@@ -109,8 +120,6 @@ map("n", "<C-up>", "1<C-w>+", { silent = true, desc = "Increase window height" }
 map("n", "<C-down>", "1<C-w>-", { silent = true, desc = "Decrease window height" })
 map("n", "<C-right>", "1<C-w>>", { silent = true, desc = "Increase window width" })
 map("n", "<C-left>", "1<C-w><", { silent = true, desc = "Decrease window width" })
-
-map("n", "<C-c>", "<C-o><", { noremap = true, silent = true, desc = "Unmapped placeholder key" })
 
 map("n", "+", function()
 	require("config.utils.togglebool").toggleBool(true)
