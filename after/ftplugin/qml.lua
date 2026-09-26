@@ -1,6 +1,6 @@
 local saved_divisor = nil
 
-function DivideNumberUnderCursor(reset_divisor)
+local function DivideNumberUnderCursor(reset_divisor)
 	local cword = vim.fn.expand("<cword>")
 	local current_num = tonumber(cword)
 
@@ -38,9 +38,9 @@ end
 
 vim.keymap.set("n", "<leader>h", function()
 	DivideNumberUnderCursor(false)
-end, { desc = "Divide number under cursor" })
+end, { buffer = vim.api.nvim_get_current_buf(), desc = "Divide number under cursor" })
 
 vim.keymap.set("n", "<leader>H", function()
 	DivideNumberUnderCursor(true)
-end, { desc = "Reset divisor and divide" })
+end, { buffer = vim.api.nvim_get_current_buf(), desc = "Reset divisor and divide" })
 
