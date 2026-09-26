@@ -3,7 +3,13 @@ return {
 		src = "https://github.com/folke/todo-comments.nvim",
 		after = { "plenary.nvim" },
 		keys = {
-			{ "<leader>ltd", desc = "Todo comments" },
+			{
+				"<leader>ltd",
+				function()
+					vim.cmd("TodoQuickFix")
+				end,
+				desc = "Todo comments (quickfix)",
+			},
 		},
 		config = function()
 			require("todo-comments").setup({
@@ -113,7 +119,13 @@ return {
 	{
 		src = "https://github.com/lewis6991/gitsigns.nvim",
 		keys = {
-			{ "<leader>lgt", desc = "Gitsigns toggle" },
+			{
+				"<leader>lgt",
+				function()
+					require("gitsigns").toggle_signs()
+				end,
+				desc = "Gitsigns toggle signs",
+			},
 		},
 		opts = {
 			signs = {
