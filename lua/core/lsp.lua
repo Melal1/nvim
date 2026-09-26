@@ -1,12 +1,12 @@
 vim.lsp.enable({
-  "emmylua_ls",
+	"emmylua_ls",
 	"cmake",
 	"pyright",
 	"ruff",
 	"nil_ls",
 	"jsonls",
 	-- "qmlls",
-  "avalonia",
+	"avalonia",
 	"clangd",
 	"qmlgolsp",
 	-- "harper_ls",
@@ -27,6 +27,15 @@ vim.api.nvim_create_autocmd("LspAttach", {
 	desc = "LSP: Disable hover capability from Ruff",
 })
 
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "lua",
+	callback = function(args)
+		vim.keymap.set("n", "<leader>lua", function()
+			vim.lsp.enable({ "lua_ls" })
+		end)
+	end,
+	desc = "add keymap to start lua_ls on lua ft",
+})
 vim.opt.winborder = "rounded"
 vim.diagnostic.config({
 	virtual_lines = false,

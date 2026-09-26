@@ -17,7 +17,7 @@ end
 
 _G.Packload = require("packload")
 
-Packload.load(plugins, { validate = true })
+Packload.load(plugins, { validate = false })
 
 -- local e = vim.uv.hrtime()
 
