@@ -5,11 +5,17 @@ This is my current stable Neovim configuration (the old setup was renamed to `ne
 I use a custom, lightweight plugin manager (`packload`) inspired by `lazy.nvim`.
 I wrote the core engine, validator, and types, while an LLM generated the UI and type documentation. 
 Cold startup time sits around **~25ms** on my machine.
+`:Packload [state]` opens the plugin status UI.
+
+### Requirements
+
+- Neovim **0.12+**, since `packload` builds on the built-in `vim.pack`.
+- A Nerd Font for the icons used by the statusline and plugins.
 
 ### Project Structure
 
 ```bash
-$ tree -I "tests|.git|lsp|README.md"
+$ tree -I ".git|lsp|README.md"
 .
 ├── after
 │   └── ftplugin
@@ -32,7 +38,6 @@ $ tree -I "tests|.git|lsp|README.md"
 │   │   ├── lsp.lua
 │   │   └── set.lua
 │   ├── init.lua
-│   ├── nvim.log
 │   ├── packload
 │   │   ├── init.lua
 │   │   ├── status.lua
@@ -45,7 +50,7 @@ $ tree -I "tests|.git|lsp|README.md"
 │   └── statusline.lua
 └── nvim-pack-lock.json
 
-10 directories, 24 files
+10 directories, 23 files
 
 ```
 
