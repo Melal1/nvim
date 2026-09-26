@@ -37,9 +37,13 @@ private.list = list
 ---@param src string
 ---@return string
 local function name_from_src(src)
+  if src:sub(-1) == "/" then
+    src = src:sub(1,-2)
+  end
+
 	local len = src:len()
 	local pos = -1
-	for i = 1, len do
+	for _ = 1, len do
 		if src:sub(pos, pos) == "/" then
 			break
 		end
