@@ -32,9 +32,9 @@ vim.api.nvim_create_autocmd("FileType", {
 	callback = function(args)
 		vim.keymap.set("n", "<leader>lua", function()
 			vim.lsp.enable({ "lua_ls" })
-		end)
+		end, { buffer = args.buf, desc = "Start lua_ls for this buffer" })
 	end,
-	desc = "add keymap to start lua_ls on lua ft",
+	desc = "add a buffer-local keymap to start lua_ls on lua ft",
 })
 vim.opt.winborder = "rounded"
 vim.diagnostic.config({

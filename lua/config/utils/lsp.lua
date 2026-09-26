@@ -1,4 +1,4 @@
-M = {}
+local M = {}
 
 function M.lspRename(new_name)
 	local old_bufs = vim.api.nvim_list_bufs()
