@@ -1,2 +1,3 @@
 /lua/nvim.log
 /tests
+/lua/plugins/test.lua

@@ -37,8 +37,22 @@ private.list = list
 ---@param src string
 ---@return string
 local function name_from_src(src)
-	local name = src:match("([^/]+)/?$") or ""
-	return (name:gsub("%.git$", ""))
+	local len = src:len()
+	local pos = -1
+	for i = 1, len do
+		if src:sub(pos, pos) == "/" then
+			break
+		end
+		pos = pos - 1
+	end
+
+	src = src:sub(pos + 1)
+
+	if src:sub(-4) == ".git" then
+		src = src:sub(1, -5)
+	end
+
+	return src
 end
 
 ---@param items packload.PluginSpec|packload.PluginSpec[]
@@ -554,7 +568,7 @@ function M.delete(names)
 end
 
 function M.status(opts)
-		return require("packload.status").status(M, opts)
+	return require("packload.status").status(M, opts)
 end
 
 function M.open(opts)
