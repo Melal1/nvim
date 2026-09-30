@@ -181,7 +181,7 @@
       "src": "https://github.com/nvim-tree/nvim-tree.lua"
     },
     "nvim-treesitter": {
-      "rev": "f603a2f4da48728f80257fb5fbb90145fd1dc173",
+      "rev": "728e031f6b11d03d1f0708b7dc4fb0f1d9c8a137",
       "src": "https://github.com/nvim-treesitter/nvim-treesitter",
       "version": "'main'"
     },
@@ -235,7 +235,7 @@
       "src": "https://github.com/MeanderingProgrammer/render-markdown.nvim"
     },
     "roslyn-filewatch.nvim": {
-      "rev": "e028a3b00f9898f718f963896413bcf54f711d1b",
+      "rev": "501e7b0de88020fb6aae35b7b4c32606b38faf5e",
       "src": "https://github.com/khoido2003/roslyn-filewatch.nvim"
     },
     "roslyn.nvim": {
@@ -247,7 +247,7 @@
       "src": "https://github.com/folke/snacks.nvim"
     },
     "sqlserver.nvim": {
-      "rev": "8d7301ee05f9ca1fb2c648596d5f34ee1d761a4f",
+      "rev": "4d2dd4814ae6f87911ae44ebdc76f81c08b8273b",
       "src": "https://github.com/NicholasMata/sqlserver.nvim"
     },
     "statuscol": {
@@ -309,6 +309,10 @@
     "volt": {
       "rev": "620de1321f275ec9d80028c68d1b88b409c0c8b1",
       "src": "https://github.com/nvzone/volt"
+    },
+    "which-key.nvim": {
+      "rev": "3aab2147e74890957785941f0c1ad87d0a44c15a",
+      "src": "https://github.com/folke/which-key.nvim"
     },
     "zen-mode.nvim": {
       "rev": "8564ce6d29ec7554eb9df578efa882d33b3c23a7",
