@@ -566,7 +566,7 @@ return {
 
 	{
 		src = "https://github.com/saghen/blink.cmp",
-		event = { "BufReadPost", "BufNewFile" },
+		event = { "BufReadPost", "BufNewFile" , "BufEnter" },
 		after = { "blink.lib", "blink-copilot", "friendly-snippets", "nvim-web-devicons", "lazydev.nvim" },
 
 		build = function()
