@@ -792,34 +792,69 @@ return {
 			})
 		end,
 	},
-
 	{
-		src = "https://github.com/stevearc/oil.nvim",
+		src = "https://github.com/nvim-tree/nvim-tree.lua",
+
 		after = { "nvim-web-devicons" },
-		cmd = { "Oil" },
-		lazy = false,
-		keys = {
-			{ "-", "<CMD>Oil<CR>", desc = "Open parent directory" },
-		},
-		opts = {
-			default_file_explorer = true,
-			delete_to_trash = true,
-			skip_confirm_for_simple_edits = true,
-			view_options = {
-				show_hidden = true,
-				natural_order = true,
-				is_always_hidden = function(name, _)
-					return name == ".." or name == ".git"
-				end,
-			},
-			win_options = {
-				wrap = true,
-			},
-		},
+		keys = { {
+
+			"<leader>E",
+			"<CMD>NvimTreeToggle<CR>",
+			desc = "Open nvim-tree.lua",
+		} },
+
+		---@type nvim_tree.config
+		opts = {},
+
 		config = function(opts)
-			require("oil").setup(opts)
+			require("nvim-tree").setup(opts)
 		end,
 	},
+	{
+		src = "https://github.com/FylerOrg/fyler.nvim",
+		after = { "nvim-web-devicons" },
+
+		keys = {
+			{ "-", "<CMD>Fyler<CR>", desc = "Open parent directory" },
+		},
+		opts = {
+			integrations = {
+				icon = "nvim_web_devicons",
+			},
+			follow_root_dir = true,
+		},
+		config = function(opts)
+			require("fyler").setup(opts)
+		end,
+	},
+
+	-- {
+	-- 	src = "https://github.com/stevearc/oil.nvim",
+	-- 	after = { "nvim-web-devicons" },
+	-- 	cmd = { "Oil" },
+	-- 	lazy = false,
+	-- 	keys = {
+	-- 		{ "-", "<CMD>Oil<CR>", desc = "Open parent directory" },
+	-- 	},
+	-- 	opts = {
+	-- 		default_file_explorer = true,
+	-- 		delete_to_trash = true,
+	-- 		skip_confirm_for_simple_edits = true,
+	-- 		view_options = {
+	-- 			show_hidden = true,
+	-- 			natural_order = true,
+	-- 			is_always_hidden = function(name, _)
+	-- 				return name == ".." or name == ".git"
+	-- 			end,
+	-- 		},
+	-- 		win_options = {
+	-- 			wrap = true,
+	-- 		},
+	-- 	},
+	-- 	config = function(opts)
+	-- 		require("oil").setup(opts)
+	-- 	end,
+	-- },
 
 	--- Sql things:
 	{
