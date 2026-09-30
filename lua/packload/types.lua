@@ -8,8 +8,9 @@
 ---@field refeed? boolean Re-feed the lhs after loading when no rhs is given.
 
 ---@class packload.PluginSpec
----@field src string Git source accepted by vim.pack.add().
----@field name? string Package name. Defaults to the final component of src.
+---@field src? string Git source accepted by vim.pack.add(). Takes precedence over dir.
+---@field dir? string Existing local plugin directory, used when src is absent. One source is required.
+---@field name? string Package name. Defaults to the final component of src or dir.
 ---@field version? string|vim.VersionRange Version accepted by vim.pack.add().
 ---@field event? string|string[] Autocmd event(s) that load the plugin.
 ---@field ft? string|string[] Filetype(s) that load the plugin.
@@ -25,6 +26,7 @@
 ---@field config? fun(opts: table|nil) Runs after the plugin is loaded.
 
 ---@class packload.Plugin: packload.PluginSpec
+---@field src string Selected source (Git source or local directory).
 ---@field name string
 ---@field after string[]
 ---@field seq integer
@@ -32,6 +34,7 @@
 ---@field autocmds integer[]
 ---@field commands string[]
 ---@field keymaps { mode: string, lhs: string, temporary: boolean, buf?: integer }[]
+---@field loader fun(plugin: packload.Plugin, defer?: boolean)
 ---@field path? string
 ---@field eager? boolean
 ---@field load_time_ns? integer Time spent in packadd and config.

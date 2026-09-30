@@ -1,3 +1,4 @@
 /lua/nvim.log
 /tests
 /lua/plugins/test.lua
+/lua/packload/README.md

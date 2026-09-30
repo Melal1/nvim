@@ -8,6 +8,7 @@ local State = {
 
 ---@type table<string, packload.Plugin>
 local plugins = {}
+local local_plugins = {}
 
 local private = {
 	plugins = plugins,
@@ -37,9 +38,9 @@ private.list = list
 ---@param src string
 ---@return string
 local function name_from_src(src)
-  if src:sub(-1) == "/" then
-    src = src:sub(1,-2)
-  end
+	if src:sub(-1) == "/" then
+		src = src:sub(1, -2)
+	end
 
 	local len = src:len()
 	local pos = -1
@@ -59,10 +60,21 @@ local function name_from_src(src)
 	return src
 end
 
+local function load_package(plugin, defer)
+	vim.cmd.packadd({ plugin.name, bang = defer })
+end
+
+---@class packload.ResolvedSpec
+---@field spec packload.PluginSpec
+---@field src string
+---@field loader fun(plugin: packload.Plugin, defer?: boolean)
+---@field name? string
+---@field path? string
+
 ---@param items packload.PluginSpec|packload.PluginSpec[]
----@param result? packload.PluginSpec[]
+---@param result? packload.ResolvedSpec[]
 ---@param root? boolean
----@return packload.PluginSpec[]
+---@return packload.ResolvedSpec[]
 local function flatten_specs(items, result, root)
 	result = result or {}
 	root = root ~= false
@@ -71,7 +83,16 @@ local function flatten_specs(items, result, root)
 	end
 
 	if items.src ~= nil then
-		result[#result + 1] = items
+		result[#result + 1] = { spec = items, src = items.src, loader = load_package }
+		return result
+	elseif items.dir ~= nil then
+		local directory = require("packload.directory")
+		result[#result + 1] = {
+			spec = items,
+			src = items.dir,
+			loader = directory.load,
+			path = directory.resolve(items.dir),
+		}
 		return result
 	end
 
@@ -152,7 +173,7 @@ local function load_plugin(plugin, defer)
 	clear_triggers(plugin)
 	local started = vim.uv.hrtime()
 	local ok, err = xpcall(function()
-		vim.cmd.packadd({ plugin.name, bang = defer })
+		plugin.loader(plugin, defer)
 		if plugin.config then
 			plugin.config(plugin.opts)
 		end
@@ -440,87 +461,63 @@ end
 
 ---@param input? packload.PluginSpec|packload.PluginSpec[]
 ---@param opts? packload.LoadOpts
-function M.load(input, opts)
-	opts = opts or {}
-	if vim.pack == nil then
-		error("[packload] requires Neovim with vim.pack (0.12+)", 2)
-	end
-	if input == nil then
-		return
-	end
-
-	local specs = flatten_specs(input)
-	if #specs == 0 then
-		return
-	end
-
-	local validate = opts.validate and require("packload.validate")
-	local resolved, batch_names = {}, {}
-	for _, spec in ipairs(specs) do
+local function resolve_specs(input, opts)
+	local specs = input ~= nil and flatten_specs(input) or {}
+	local validate = opts and opts.validate and require("packload.validate")
+	local batch_names = {}
+	for _, item in ipairs(specs) do
+		local spec = item.spec
 		if validate then
 			validate(spec)
 		end
-		local name = spec.name or name_from_src(spec.src)
+		if type(item.src) ~= "string" or item.src == "" then
+			error("packload plugin spec requires a non-empty src or dir: " .. vim.inspect(spec), 2)
+		end
+		local name = spec.name or name_from_src(item.src)
 		if name == "" then
 			error("packload plugin spec resolves to an empty name: " .. vim.inspect(spec), 2)
 		end
 		assert(plugins[name] == nil, "packload plugin is already registered: " .. name)
 		assert(not batch_names[name], "packload plugin is duplicated in this batch: " .. name)
 		batch_names[name] = true
-		resolved[#resolved + 1] = { spec = spec, name = name }
+		item.name = name
 	end
+	return specs
+end
 
-	---@type vim.pack.Spec[]
-	local pack_specs = {}
-	---@type packload.Plugin[]
-	local eager_plugins = {}
-	for _, item in ipairs(resolved) do
-		local spec, name = item.spec, item.name
-		registration_seq = registration_seq + 1
-		---@type packload.Plugin
-		local plugin = vim.tbl_extend("force", spec, {
-			name = name,
-			after = list(spec.after),
-			seq = registration_seq,
-			state = State.REGISTERED,
-			autocmds = {},
-			commands = {},
-			keymaps = {},
-		})
-		plugins[name] = plugin
-
-		if plugin.init then
-			local ok, err = xpcall(plugin.init, debug.traceback)
-			if not ok then
-				vim.notify("[packload] init failed for '" .. name .. "':\n" .. err, vim.log.levels.ERROR)
-			end
-		end
-
-		pack_specs[#pack_specs + 1] = {
-			src = plugin.src,
-			name = name,
-			version = plugin.version,
-		}
-	end
-
-	create_build_autocmd()
-	local function load_callback(data)
-		local plugin = plugins[data.spec.name]
-		plugin.path = data.path
-		if not register(plugin) then
-			plugin.eager = true
-			eager_plugins[#eager_plugins + 1] = plugin
+local function create_plugin(item)
+	local spec, name = item.spec, item.name
+	registration_seq = registration_seq + 1
+	---@type packload.Plugin
+	local plugin = vim.tbl_extend("force", spec, {
+		src = item.src,
+		name = name,
+		after = list(spec.after),
+		seq = registration_seq,
+		state = State.REGISTERED,
+		autocmds = {},
+		commands = {},
+		keymaps = {},
+		loader = item.loader,
+	})
+	plugins[name] = plugin
+	if plugin.init then
+		local ok, err = xpcall(plugin.init, debug.traceback)
+		if not ok then
+			vim.notify("[packload] init failed for '" .. name .. "':\n" .. err, vim.log.levels.ERROR)
 		end
 	end
+	return plugin
+end
 
-	local ok, err = xpcall(function()
-		vim.pack.add(pack_specs, { load = load_callback, confirm = false })
-	end, debug.traceback)
-	if not ok then
-		vim.notify("[packload] vim.pack.add failed:\n" .. err, vim.log.levels.ERROR)
+local function register_plugin(plugin, eager_plugins)
+	if not register(plugin) then
+		plugin.eager = true
+		eager_plugins[#eager_plugins + 1] = plugin
 	end
-	flush_builds()
+end
 
+local function load_eager(eager_plugins)
 	table.sort(eager_plugins, function(a, b)
 		local priority_a, priority_b = a.priority or 0, b.priority or 0
 		if priority_a ~= priority_b then
@@ -528,11 +525,54 @@ function M.load(input, opts)
 		end
 		return a.seq < b.seq
 	end)
-
 	local defer = vim.v.vim_did_enter == 0
 	for _, plugin in ipairs(eager_plugins) do
 		load_plugin(plugin, defer)
 	end
+end
+
+---@param input? packload.PluginSpec|packload.PluginSpec[]
+---@param opts? packload.LoadOpts
+function M.load(input, opts)
+	if vim.pack == nil then
+		error("[packload] requires Neovim with vim.pack (0.12+)", 2)
+	end
+	local resolved = resolve_specs(input, opts)
+	if #resolved == 0 then
+		return
+	end
+	local pack_specs, eager_plugins = {}, {}
+	for _, item in ipairs(resolved) do
+		local plugin = create_plugin(item)
+		if item.path then
+			plugin.path = item.path
+			local_plugins[plugin.name] = true
+			register_plugin(plugin, eager_plugins)
+		else
+			pack_specs[#pack_specs + 1] = {
+				src = plugin.src,
+				name = plugin.name,
+				version = plugin.version,
+			}
+		end
+	end
+
+	if #pack_specs > 0 then
+		create_build_autocmd()
+		local function load_callback(data)
+			local plugin = plugins[data.spec.name]
+			plugin.path = data.path
+			register_plugin(plugin, eager_plugins)
+		end
+		local ok, err = xpcall(function()
+			vim.pack.add(pack_specs, { load = load_callback, confirm = false })
+		end, debug.traceback)
+		if not ok then
+			vim.notify("[packload] vim.pack.add failed:\n" .. err, vim.log.levels.ERROR)
+		end
+		flush_builds()
+	end
+	load_eager(eager_plugins)
 end
 
 ---@param name string
@@ -543,8 +583,22 @@ function M.trigger(name)
 end
 
 ---@param names string[]
+local function managed_names(names)
+	local managed = {}
+	for _, name in ipairs(names) do
+		if not local_plugins[name] then
+			managed[#managed + 1] = name
+		end
+	end
+	return managed
+end
+
+---@param names string[]
 function M.update(names)
-	vim.pack.update(names, { force = true })
+	local managed = managed_names(names)
+	if #managed > 0 then
+		vim.pack.update(managed, { force = true })
+	end
 end
 
 ---@param names string[]
@@ -561,12 +615,16 @@ end
 
 ---@param names string[]
 function M.delete(names)
-	vim.pack.del(names, { force = true })
+	local managed = managed_names(names)
+	if #managed > 0 then
+		vim.pack.del(managed, { force = true })
+	end
 	for _, name in ipairs(names) do
 		local plugin = plugins[name]
 		if plugin then
 			clear_triggers(plugin)
 			plugins[name] = nil
+			local_plugins[name] = nil
 		end
 	end
 end

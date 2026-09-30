@@ -21,8 +21,12 @@ return function(spec)
 	if type(spec) ~= "table" then
 		error("packload malformed plugin spec: " .. vim.inspect(spec), 2)
 	end
-	if type(spec.src) ~= "string" or spec.src == "" then
-		error("packload plugin spec requires a non-empty src: " .. vim.inspect(spec), 2)
+	local source = spec.src
+	if source == nil then
+		source = spec.dir
+	end
+	if type(source) ~= "string" or source == "" then
+		error("packload plugin spec requires a non-empty src or dir: " .. vim.inspect(spec), 2)
 	end
 	if spec.name ~= nil and (type(spec.name) ~= "string" or spec.name == "") then
 		error("packload plugin spec has an invalid name: " .. vim.inspect(spec), 2)
