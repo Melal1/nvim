@@ -1253,8 +1253,21 @@ return {
 		build = ":TSUpdate",
 		config = function()
 			vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
-			local ts = require("nvim-treesitter")
-			ts.install({ "c_sharp", "python", "cpp", "bash", "lua", "rust", "make", "java", "cmake", "qmljs" })
+			-- Install parsers explicitly with :TSInstall (see :TSInstallConfigured).
+			vim.api.nvim_create_user_command("TSInstallConfigured", function()
+				require("nvim-treesitter").install({
+					"c_sharp",
+					"python",
+					"cpp",
+					"bash",
+					"lua",
+					"rust",
+					"make",
+					"java",
+					"cmake",
+					"qmljs",
+				})
+			end, { desc = "Install the configured Tree-sitter parsers" })
 			vim.api.nvim_create_autocmd("FileType", {
 				callback = function(details)
 					vim.defer_fn(function()

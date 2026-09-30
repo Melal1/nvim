@@ -1,15 +1,53 @@
-vim.lsp.enable({
-	"emmylua_ls",
-	"cmake",
-	"pyright",
-	"ruff",
-	"nil_ls",
-	"jsonls",
-	-- "qmlls",
-	"avalonia",
-	"clangd",
-	"qmlgolsp",
-	-- "harper_ls",
+local function setup_lsp()
+	vim.lsp.enable({
+		"emmylua_ls",
+		"cmake",
+		"pyright",
+		"ruff",
+		"nil_ls",
+		"jsonls",
+		-- "qmlls",
+		"avalonia",
+		"clangd",
+		"qmlgolsp",
+		-- "harper_ls",
+	})
+
+	vim.diagnostic.config({
+		virtual_lines = false,
+		virtual_text = false,
+		underline = true,
+		update_in_insert = false,
+		severity_sort = true,
+		-- float = {
+		-- 	border = "rounded",
+		-- 	source = true,
+		-- },
+		signs = {
+			text = {
+				[vim.diagnostic.severity.ERROR] = "●",
+				[vim.diagnostic.severity.WARN] = "●",
+				[vim.diagnostic.severity.INFO] = "●",
+				[vim.diagnostic.severity.HINT] = "●",
+			},
+			numhl = {
+				[vim.diagnostic.severity.ERROR] = "ErrorMsg",
+				[vim.diagnostic.severity.WARN] = "WarningMsg",
+			},
+		},
+	})
+end
+
+-- Initialize before filetype plugins run, or when an unnamed buffer gets a type.
+vim.api.nvim_create_autocmd({ "BufReadPre", "BufNewFile", "FileType" }, {
+	group = vim.api.nvim_create_augroup("core_lsp_start", { clear = true }),
+	callback = function(args)
+		if vim.bo[args.buf].buftype ~= "" then
+			return
+		end
+		setup_lsp()
+		return true -- Remove this handler after the first file buffer.
+	end,
 })
 
 vim.api.nvim_create_autocmd("LspAttach", {
@@ -37,29 +75,6 @@ vim.api.nvim_create_autocmd("FileType", {
 	desc = "add a buffer-local keymap to start lua_ls on lua ft",
 })
 vim.opt.winborder = "rounded"
-vim.diagnostic.config({
-	virtual_lines = false,
-	virtual_text = false,
-	underline = true,
-	update_in_insert = false,
-	severity_sort = true,
-	-- float = {
-	-- 	border = "rounded",
-	-- 	source = true,
-	-- },
-	signs = {
-		text = {
-			[vim.diagnostic.severity.ERROR] = "●",
-			[vim.diagnostic.severity.WARN] = "●",
-			[vim.diagnostic.severity.INFO] = "●",
-			[vim.diagnostic.severity.HINT] = "●",
-		},
-		numhl = {
-			[vim.diagnostic.severity.ERROR] = "ErrorMsg",
-			[vim.diagnostic.severity.WARN] = "WarningMsg",
-		},
-	},
-})
 
 vim.keymap.set("n", "<leader>grn", function()
 	vim.ui.input({ prompt = "New name: " }, function(new_name)

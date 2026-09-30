@@ -55,8 +55,7 @@ vim.o.showmode = false
 
 local CTRL_V = vim.api.nvim_replace_termcodes("<C-v>", true, true, true)
 local CTRL_S = vim.api.nvim_replace_termcodes("<C-s>", true, true, true)
-Packload.trigger "nvim-web-devicons"
-local WebDevIcons = require("nvim-web-devicons")
+local WebDevIcons
 
 local modes = setmetatable({
 	n = { long = " NORMAL ", short = " N ", hl = "ModeComInv" },
@@ -159,6 +158,14 @@ local function update_file_info(buf)
 	end
 
 	local ft = vim.bo[buf].filetype
+	file_icon = ""
+	if ft == "" then
+		return
+	end
+	if not WebDevIcons then
+		Packload.trigger("nvim-web-devicons")
+		WebDevIcons = require("nvim-web-devicons")
+	end
 	file_icon = WebDevIcons.get_icon_by_filetype(ft) or ""
 end
 
@@ -179,19 +186,24 @@ vim.api.nvim_create_autocmd({ "VimEnter", "DirChanged" }, {
 
 update_cwd()
 
-vim.api.nvim_create_autocmd({ "BufEnter", "BufFilePost" }, {
+vim.api.nvim_create_autocmd({ "BufEnter", "BufFilePost", "FileType" }, {
 	callback = function(args)
 		local buf = args.buf
 
 		update_file_info(buf)
 
 		-- Diagnostics enabled if at least one LSP is attached , it's added here so diags disappear when in oil,telescope ....etc
-		local clients = vim.lsp.get_clients({ bufnr = buf })
+		local lsp = package.loaded["vim.lsp"]
+		local clients = lsp and lsp.get_clients({ bufnr = buf }) or {}
 		diag_enabled = (#clients > 0 and copilot == "") or (#clients > 1)
 	end,
 })
 
 local function update_diag_counts(bufnr)
+	-- An empty editor has no diagnostics; do not load the subsystem just to count them.
+	if not package.loaded["vim.diagnostic"] then
+		return
+	end
 	if not bufnr or bufnr == 0 then
 		bufnr = vim.api.nvim_get_current_buf()
 	end

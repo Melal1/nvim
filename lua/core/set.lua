@@ -99,5 +99,10 @@ vim.filetype.add({
 	},
 })
 
-vim.treesitter.language.register("xml", "axaml")
-vim.treesitter.language.register("xml", "xaml")
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = { "axaml", "xaml" },
+	once = true,
+	callback = function()
+		vim.treesitter.language.register("xml", { "axaml", "xaml" })
+	end,
+})
