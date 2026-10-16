@@ -1,6 +1,27 @@
 return {
 	--Surround: Mini.Surround
 	{
+		src = "https://github.com/melal1/make.nvim",
+		ft = { "cpp" },
+		opts = {
+			SourceExtensions = { ".cpp", ".c", ".cc", ".cxx" },
+			RootMarkers = { ".git", "src", "include", "build", "Makefile" },
+			MaxSearchLevels = 5,
+			CacheUseHash = true,
+			CacheFormat = "luabytecode", -- or "mpack"
+			CacheDir = ".cache/make.nviM",
+			CacheLog = false,
+			EnableBackup = false,
+		},
+		config = function()
+			vim.keymap.set("n", "<leader>rf", function()
+				if vim.bo.filetype == "cpp" then
+					vim.cmd("Make run")
+				end
+			end, { desc = "Run the current cpp file with make.nvim" })
+		end,
+	},
+	{
 		src = "https://github.com/echasnovski/mini.surround",
 		keys = {
 			{ "gsa", desc = "Add Surrounding", mode = { "n", "v" } },

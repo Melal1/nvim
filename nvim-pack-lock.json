@@ -5,6 +5,10 @@
       "src": "https://github.com/jinzhongjia/LspUI.nvim",
       "version": "'main'"
     },
+    "Make.nvim": {
+      "rev": "51e1f0ad842552e5b307c1c19ddd5e2a6a7ca08a",
+      "src": "https://github.com/melal1/Make.nvim"
+    },
     "blink-copilot": {
       "rev": "7ad8209b2f880a2840c94cdcd80ab4dc511d4f39",
       "src": "https://github.com/fang2hou/blink-copilot"
@@ -92,6 +96,10 @@
     "lazydev.nvim": {
       "rev": "ff2cbcba459b637ec3fd165a2be59b7bbaeedf0d",
       "src": "https://github.com/folke/lazydev.nvim"
+    },
+    "make.nvim": {
+      "rev": "51e1f0ad842552e5b307c1c19ddd5e2a6a7ca08a",
+      "src": "https://github.com/melal1/make.nvim"
     },
     "mini.ai": {
       "rev": "d0c4987a1ead2bcf4eb22cc9815c662d76677c08",
