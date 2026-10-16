@@ -1,4 +1,30 @@
 return {
+	--Surround: Mini.Surround
+	{
+		src = "https://github.com/echasnovski/mini.surround",
+		keys = {
+			{ "gsa", desc = "Add Surrounding", mode = { "n", "v" } },
+			{ "gsd", desc = "Delete Surrounding" },
+			{ "gsr", desc = "Replace Surrounding" },
+			{ "gsf", desc = "Find Right Surrounding" },
+			{ "gsF", desc = "Find Left Surrounding" },
+			{ "gsh", desc = "Highlight Surrounding" },
+			{ "gsn", desc = "Update `n_lines`" },
+		},
+		config = function()
+			require("mini.surround").setup({
+				mappings = {
+					add = "gsa",
+					delete = "gsd",
+					find = "gsf",
+					find_left = "gsF",
+					highlight = "gsh",
+					replace = "gsr",
+					update_n_lines = "gsn",
+				},
+			})
+		end,
+	},
 
 	{
 		src = "https://github.com/zbirenbaum/copilot.lua",
@@ -18,6 +44,34 @@ return {
 
 		config = function(opts)
 			require("copilot").setup(opts)
+		end,
+	},
+	{
+		src = "https://github.com/jinzhongjia/LspUI.nvim",
+		version = "main",
+		opts = {
+			inlay_hint = {
+				enable = false,
+				command_enable = true,
+				filter = {
+					whitelist = {},
+					blacklist = {},
+				},
+			},
+		},
+		keys = {
+			{ "K", "<cmd>LspUI hover<CR>" },
+			{ "gr", "<cmd>LspUI reference<CR>" },
+			{ "gd", "<cmd>LspUI definition<CR>" },
+			{ "gt", "<cmd>LspUI type_definition<CR>" },
+			{ "gi", "<cmd>LspUI implementation<CR>" },
+			{ "<leader>rn", "<cmd>LspUI rename<CR>" },
+			{ "<leader>ca", "<cmd>LspUI code_action<CR>" },
+			{ "<leader>ci", "<cmd>LspUI call_hierarchy incoming<CR>" },
+			{ "<leader>co", "<cmd>LspUI call_hierarchy outgoing<CR>" },
+		},
+		config = function(opts)
+			require("LspUI").setup(opts)
 		end,
 	},
 
@@ -566,7 +620,7 @@ return {
 
 	{
 		src = "https://github.com/saghen/blink.cmp",
-		event = { "BufReadPost", "BufNewFile" , "BufEnter" },
+		event = { "BufReadPost", "BufNewFile", "BufEnter" },
 		after = { "blink.lib", "blink-copilot", "friendly-snippets", "nvim-web-devicons", "lazydev.nvim" },
 
 		build = function()
@@ -857,11 +911,22 @@ return {
 	-- },
 
 	--- Sql things:
+	-- {
+	-- 	src = "https://github.com/NicholasMata/sqlserver.nvim",
+	-- 	cmd = { "SQLServer" },
+	-- 	opts = {
+	-- 		keymap_prefix = "<leader>D",
+	-- 	},
+	-- 	config = function(opts)
+	-- 		require("sqlserver").setup(opts)
+	-- 	end,
+	-- },
 	{
-		src = "https://github.com/NicholasMata/sqlserver.nvim",
+		dir = "~/Dev/lua/sqlserver.nvim.fork",
+		after = { "snacks.nvim" },
 		cmd = { "SQLServer" },
 		opts = {
-			keymap_prefix = "<leader>D",
+			keymap_prefix = "<leader>d",
 		},
 		config = function(opts)
 			require("sqlserver").setup(opts)

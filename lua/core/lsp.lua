@@ -76,25 +76,25 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 vim.opt.winborder = "rounded"
 
-vim.keymap.set("n", "<leader>grn", function()
-	vim.ui.input({ prompt = "New name: " }, function(new_name)
-		if new_name then
-			require("config.utils.lsp").lspRename(new_name)
-		end
-	end)
-end, { desc = "Lsp rename" })
-
-vim.keymap.set("n", "gD", function()
-	vim.lsp.buf.declaration()
-end, { desc = "Go to declaration " })
-
-vim.keymap.set("n", "gd", function()
-	vim.lsp.buf.definition()
-end, { desc = "Go to definition" })
-
-vim.keymap.set("n", "gm", function()
-	vim.lsp.buf.implementation()
-end, { desc = "Go to implementation" })
+-- vim.keymap.set("n", "<leader>grn", function()
+-- 	vim.ui.input({ prompt = "New name: " }, function(new_name)
+-- 		if new_name then
+-- 			require("config.utils.lsp").lspRename(new_name)
+-- 		end
+-- 	end)
+-- end, { desc = "Lsp rename" })
+--
+-- vim.keymap.set("n", "gD", function()
+-- 	vim.lsp.buf.declaration()
+-- end, { desc = "Go to declaration " })
+--
+-- vim.keymap.set("n", "gd", function()
+-- 	vim.lsp.buf.definition()
+-- end, { desc = "Go to definition" })
+--
+-- vim.keymap.set("n", "gm", function()
+-- 	vim.lsp.buf.implementation()
+-- end, { desc = "Go to implementation" })
 
 vim.keymap.set("n", "td", function()
 	vim.diagnostic.enable(not vim.diagnostic.is_enabled()) -- disable diagnostics

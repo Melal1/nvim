@@ -32,6 +32,12 @@ map(
 	{ desc = "Change all occurrences of word" }
 )
 
+map("n", "<leader>pa", function()
+	local buf_path = vim.api.nvim_buf_get_name(0)
+	vim.fn.setreg("+", buf_path)
+	vim.notify("file: " .. buf_path)
+end)
+
 map("n", "<leader>eX", function()
 	vim.cmd(".lua")
 end, { desc = "Execute current line" })

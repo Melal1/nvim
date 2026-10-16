@@ -19,6 +19,17 @@ return {
 			})
 		end,
 	},
+	{
+		src = "MeanderingProgrammer/render-markdown.nvim",
+		after = { "nvim-treesitter", "nvim-web-devicons" }, 
+    ft = {"markdown"},
+		---@module 'render-markdown'
+		---@type render.md.UserConfig
+		opts = {},
+		config = function(opts)
+			require("render-markdown").setup(opts)
+		end,
+	},
 
 	{
 		src = "https://github.com/rachartier/tiny-inline-diagnostic.nvim",
@@ -272,6 +283,7 @@ return {
 
 	{
 		src = "https://github.com/karb94/neoscroll.nvim",
+		event = { "BufReadPost", "BufNewFile" },
 		config = function()
 			require("neoscroll").setup({ duration_multiplier = 0.15 })
 		end,
