@@ -1,0 +1,84 @@
+{
+  "types": {
+    "prefix": "MODRENTYPES",
+    "body": [
+      "using i32 = std::int32_t;",
+      "using u32 = std::uint32_t;",
+      "using i16 = std::int16_t;",
+      "using u16 = std::uint16_t;",
+      "using i64 = std::int64_t;",
+      "using u64 = std::uint64_t;",
+      "using i8 = std::int8_t;",
+      "using u8 = std::uint8_t;",
+      "using f32 = float;",
+      "using f64 = double;",
+      ""
+    ],
+    "description": " Use of pretier types and more specific"
+  },
+  "attr_inline": {
+    "prefix": "MACRO_ALWAYSINLINE",
+    "body": [
+      "#if defined(_MSC_VER)",
+      "  #define A_inline __forceinline inline",
+      "#elif defined(__GNUC__) || defined(__clang__)",
+      "  #define A_inline __attribute__((always_inline)) inline",
+      "#else",
+      "  #define A_inline inline",
+      "#endif"
+    ],
+    "description": "Always inline macro"
+  },
+  "attr_nodiscard_inline": {
+    "prefix": "MACRO_ALWAYSINLINENODESCARD",
+    "body": [
+      "#if defined(_MSC_VER)",
+      "  #define AD_inline [[nodiscard]] __forceinline inline",
+      "#elif defined(__GNUC__) || defined(__clang__)",
+      "  #define AD_inline [[nodiscard]] __attribute__((always_inline)) inline",
+      "#else",
+      "  #define AD_inline [[nodiscard]] inline",
+      "#endif"
+    ],
+    "description": "Nodiscard + Always inline macro"
+  },
+  "attr_nodiscard": {
+    "prefix": "MACRO_NODESCRAD",
+    "body": [
+      "#define NDES [[nodiscard]]"
+    ],
+    "description": "Nodiscard macro"
+  },
+  "overload_new": {
+    "prefix": "OVERLOAD_NEW",
+    "body": [
+      "size_t alloc_count = 0;",
+      "void* operator new(size_t size) {",
+      "\t++alloc_count;",
+      "\tvoid* p = std::malloc(size);",
+      "\tif (!p) throw std::bad_alloc();",
+      "\treturn p;",
+      "}",
+      "",
+      "void* operator new[](size_t size) {",
+      "\treturn operator new(size);",
+      "}"
+    ],
+    "description": "Overload global new and new[]"
+  },
+  "overload_delete": {
+    "prefix": "OVERLOAD_DELETE",
+    "body": [
+      "size_t free_count = 0;",
+      "void operator delete(void* p) noexcept {",
+      "\t++free_count;",
+      "\tstd::free(p);",
+      "}",
+      "",
+      "void operator delete[](void* p) noexcept {",
+      "\toperator delete(p);",
+      "}"
+    ],
+    "description": "Overload global delete and delete[]"
+  }
+}

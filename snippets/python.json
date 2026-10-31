@@ -1,0 +1,72 @@
+{
+  "list_comprehension": {
+    "prefix": "py_list_comp",
+    "body": [
+      "# Create a new list by applying an operation to each item",
+      "items = [1, 2, 3, 4, 5]",
+      "squared_evens = [x**2 for x in items if x % 2 == 0]",
+      "print(f\"Squared evens: {squared_evens}\")"
+    ],
+    "description": "Pythonic way to filter and transform lists in one line"
+  },
+  "read_file_safely": {
+    "prefix": "py_read_file",
+    "body": [
+      "try:",
+      "    with open('${1:filename.txt}', 'r', encoding='utf-8') as f:",
+      "        content = f.read()",
+      "        print(content)",
+      "except FileNotFoundError:",
+      "    print(\"Error: The file was not found.\")",
+      "except Exception as e:",
+      "    print(f\"An unexpected error occurred: {e}\")"
+    ],
+    "description": "Safely open and read a file using a context manager (with)"
+  },
+  "dict_get_default": {
+    "prefix": "py_dict_default",
+    "body": [
+      "user_data = {\"name\": \"Alice\", \"level\": 10}",
+      "# Use .get() to avoid KeyError if the key doesn't exist",
+      "score = user_data.get(\"score\", 0)",
+      "print(f\"{user_data['name']}'s score is: {score}\")"
+    ],
+    "description": "Safely access dictionary keys with a fallback default value"
+  },
+  "f_string_format": {
+    "prefix": "py_fstring",
+    "body": [
+      "name = \"${1:User}\"",
+      "age = ${2:25}",
+      "# Modern string formatting (Python 3.6+)",
+      "print(f\"Hello {name}, next year you will be {age + 1} years old.\")"
+    ],
+    "description": "Fast and readable string interpolation using f-strings"
+  },
+  "main_block": {
+    "prefix": "py_main",
+    "body": [
+      "def main():",
+      "    print(\"Hello, World!\")",
+      "",
+      "if __name__ == \"__main__\":",
+      "    main()"
+    ],
+    "description": "The standard boilerplate to ensure code only runs when executed directly"
+  },
+  "timing_code": {
+    "prefix": "py_timer",
+    "body": [
+      "import time",
+      "",
+      "start_time = time.perf_counter()",
+      "",
+      "# Place your code here",
+      "${1:pass}",
+      "",
+      "end_time = time.perf_counter()",
+      "print(f\"Execution time: {end_time - start_time:.4f} seconds\")"
+    ],
+    "description": "Simple way to measure how long your code takes to run"
+  }
+}

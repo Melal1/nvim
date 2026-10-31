@@ -1,0 +1,23 @@
+{
+  "name": "personal-snippets",
+  "contributes": {
+    "snippets": [
+      {
+        "language": "cpp",
+        "path": "./cpp.json"
+      },
+      {
+        "language": "kotlin",
+        "path": "./kotlin.json"
+      },
+      {
+        "language": "python",
+        "path": "./python.json"
+      },
+      {
+        "language": "all",
+        "path": "./all.json"
+      }
+    ]
+  }
+}

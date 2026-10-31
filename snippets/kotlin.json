@@ -1,0 +1,11 @@
+{
+  "enable_input": {
+    "prefix": "GRADLE_EN_IN",
+    "body": [
+      "tasks.named<JavaExec>(\"run\") {",
+      "standardInput = System.`in`",
+      "}"
+    ],
+    "description": "Enable input when gradle run"
+  }
+}
