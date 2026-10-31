@@ -1,7 +1,139 @@
 return {
-	--Surround: Mini.Surround
+
+	-- {
+	-- 	src = "https://github.com/nvim-telescope/telescope-ui-select.nvim",
+	-- 	lazy = true,
+	-- },
+	-- {
+	-- 	src = "https://github.com/nvim-telescope/telescope.nvim",
+	-- 	lazy = true,
+	-- 	version = "0.1.8",
+	-- 	cmd = "Telescope",
+	-- 	-- Looks messy btw , but this is a simple solution
+	--    -- stylua: ignore
+	-- 	-- keys = {
+	-- 	-- 	{ "<leader>opc",function() require("telescope.builtin").find_files({ cwd = require("lazy.core.config").options.root }) end,desc = "Find Plugin File" },
+	-- 	-- 	{"<leader>frg",function() require("telescope.builtin").registers() end,desc = "Registers",},
+	-- 	-- 	{"<leader>ff", function() require("telescope.builtin").find_files() end, desc = "Find Files",},
+	-- 	-- 	{"<leader>fg", function() require("telescope.builtin").live_grep() end, desc = "Live Grep",},
+	-- 	-- 	{"<leader>fb", function() require("telescope.builtin").buffers() end, desc = "Buffers",},
+	-- 	-- 	{"<leader>fp", function() require("telescope").extensions.projects.projects() end, desc = "Projects",},
+	-- 	-- 	{"<leader>fSt", function() local word = vim.fn.expand("<cWORD>") require("telescope.builtin").grep_string({ search = word }) end, desc = "Grep WORD under cursor (includes punctuation)",},
+	-- 	-- 	{"<leader>fst", function() local word = vim.fn.expand("<cword>") require("telescope.builtin").grep_string({ search = word }) end, desc = "Grep word under cursor (stops at punctuation)",},
+	-- 	-- 	{"<leader>fo", function() require("telescope.builtin").oldfiles() end, desc = "Old Files",},
+	-- 	-- 	{"<leader>OO", function() require("telescope.builtin").lsp_document_symbols() end, desc = "LSP Document Symbols",},
+	-- 	-- 	{"<leader>fdia", function() require("telescope.builtin").diagnostics() end, desc = "Diagnostics",},
+	-- 	-- 	{"<leader>frf",function () require("telescope.builtin").lsp_references() end, desc = "LSP References",},
+	-- 	-- },
+	--
+	-- 	after = {
+	-- 		"plenary.nvim",
+	-- 		"nvim-telescope/telescope-ui-select.nvim",
+	-- 	},
+	-- 	config = function()
+	-- 		local telescope = require("telescope")
+	-- 		local actions = require("telescope.actions")
+	-- 		telescope.setup({
+	-- 			defaults = {
+	-- 				preview = {
+	-- 					treesitter = false,
+	-- 				},
+	-- 				mappings = {
+	-- 					i = {
+	-- 						["<esc>"] = actions.close,
+	-- 					},
+	-- 				},
+	-- 				path_display = {
+	-- 					"filename_first",
+	-- 				},
+	-- 				previewer = false,
+	-- 				prompt_prefix = "    ",
+	-- 				selection_caret = " ",
+	-- 				file_ignore_patterns = { "node_modules", "package-lock.json", "lazy-lock.json" },
+	-- 				scroll_strategy = "limit", -- don't rollover when scrolling
+	-- 				initial_mode = "insert",
+	-- 				select_strategy = "reset",
+	-- 				sorting_strategy = "ascending",
+	-- 				color_devicons = true,
+	-- 				border = true,
+	-- 				borderchars = {
+	-- 					prompt = { "─", "│", "─", "│", "┌", "┐", "│", "│" },
+	-- 					results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
+	-- 					preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+	-- 				},
+	-- 				set_env = { ["COLORTERM"] = "truecolor" }, -- default = nil,
+	-- 				layout_config = {
+	-- 					prompt_position = "top",
+	-- 					preview_cutoff = 120,
+	-- 				},
+	-- 				vimgrep_arguments = {
+	-- 					"rg",
+	-- 					"--color=never",
+	-- 					"--no-heading",
+	-- 					"--with-filename",
+	-- 					"--line-number",
+	-- 					"--column",
+	-- 					"--smart-case",
+	-- 					"--hidden",
+	-- 					"--glob=!.git/",
+	-- 				},
+	-- 			},
+	-- 			pickers = {
+	-- 				buffers = {
+	-- 					mappings = {
+	-- 						i = {
+	-- 							["<c-d>"] = actions.delete_buffer,
+	-- 						},
+	-- 						n = {
+	-- 							["<c-d>"] = actions.delete_buffer,
+	-- 						},
+	-- 					},
+	-- 					previewer = false,
+	-- 					initial_mode = "normal",
+	-- 					-- theme = "dropdown",
+	-- 					layout_config = {
+	-- 						height = 0.4,
+	-- 						width = 0.6,
+	-- 						prompt_position = "top",
+	-- 						preview_cutoff = 120,
+	-- 					},
+	-- 				},
+	-- 				current_buffer_fuzzy_find = {
+	-- 					previewer = true,
+	-- 					layout_config = {
+	-- 						prompt_position = "top",
+	-- 						preview_cutoff = 120,
+	-- 					},
+	-- 				},
+	-- 			},
+	-- 			extensions = {
+	-- 				["ui-select"] = {
+	-- 					require("telescope.themes").get_dropdown({
+	-- 						previewer = false,
+	-- 						initial_mode = "normal",
+	-- 						sorting_strategy = "ascending",
+	-- 						layout_strategy = "horizontal",
+	-- 						layout_config = {
+	-- 							horizontal = {
+	-- 								width = 0.5,
+	-- 								height = 0.4,
+	-- 								preview_width = 0.6,
+	-- 							},
+	-- 						},
+	-- 					}),
+	-- 				},
+	-- 			},
+	-- 		})
+	--
+	-- 		-- Load extensions
+	-- 		telescope.load_extension("ui-select")
+	-- 	end,
+	-- },
+
 	{
 		src = "https://github.com/melal1/make.nvim",
+
+		after = { "snacks.nvim" },
 		ft = { "cpp" },
 		opts = {
 			SourceExtensions = { ".cpp", ".c", ".cc", ".cxx" },
@@ -21,6 +153,7 @@ return {
 			end, { desc = "Run the current cpp file with make.nvim" })
 		end,
 	},
+	--Surround: Mini.Surround
 	{
 		src = "https://github.com/echasnovski/mini.surround",
 		keys = {
@@ -98,8 +231,14 @@ return {
 
 	{
 		src = "https://github.com/folke/snacks.nvim",
-		config = function()
-			require("snacks").setup({})
+		opts = {
+			picker = {
+				enabled = true,
+				ui_select = true,
+			},
+		},
+		config = function(opts)
+			require("snacks").setup(opts)
 		end,
 		keys = {
 			{
@@ -932,22 +1071,12 @@ return {
 	-- },
 
 	--- Sql things:
-	-- {
-	-- 	src = "https://github.com/NicholasMata/sqlserver.nvim",
-	-- 	cmd = { "SQLServer" },
-	-- 	opts = {
-	-- 		keymap_prefix = "<leader>D",
-	-- 	},
-	-- 	config = function(opts)
-	-- 		require("sqlserver").setup(opts)
-	-- 	end,
-	-- },
 	{
-		dir = "~/Dev/lua/sqlserver.nvim.fork",
+		src = "https://github.com/NicholasMata/sqlserver.nvim",
 		after = { "snacks.nvim" },
 		cmd = { "SQLServer" },
 		opts = {
-			keymap_prefix = "<leader>d",
+			keymap_prefix = "<leader>D",
 		},
 		config = function(opts)
 			require("sqlserver").setup(opts)
@@ -1073,7 +1202,7 @@ return {
 	},
 	{
 		src = "https://github.com/mfussenegger/nvim-dap",
-		after = { "one-small-step-for-vimkind", "nvim-dap-virtual-text" },
+		after = { "one-small-step-for-vimkind", "nvim-dap-virtual-text", "snacks.nvim" },
 		keys = {
 			{
 				"<leader>dB",
