@@ -1357,7 +1357,9 @@ return {
 					request = "launch",
 					MIMode = "gdb",
 					miDebuggerServerAddress = "localhost:1234",
-					miDebuggerPath = "/run/current-system/sw/bin/gdb",
+					miDebuggerPath = function()
+						return vim.fn.exepath("gdb")
+					end,
 					cwd = "${workspaceFolder}",
 					program = function()
 						return coroutine.create(function(dap_run_co)
@@ -1413,6 +1415,10 @@ return {
 					name = "Launch file locally (No gdbserver)",
 					type = "cppdbg",
 					request = "launch",
+					MIMode = "gdb",
+					miDebuggerPath = function()
+						return vim.fn.exepath("gdb")
+					end,
 					program = function()
 						return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/build/", "file")
 					end,
